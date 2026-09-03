@@ -93,7 +93,7 @@ Receives the report — not a system user in v1 beyond receiving a WhatsApp/emai
 - Lab branding/letterhead configuration
 - Patient info capture + report filling matching paper-sheet structure
 - Print/PDF output matching lab's actual letterhead
-- Multi-tenant backend with real accounts (replacing the light version's local-only approach)
+- Multi-tenant backend with real accounts and persistent storage
 - Patient/report history and search (reprint without retyping)
 - Out-of-range auto-flagging on results with a defined normal range
 - Referral/outsourced test tracking (send-out status, merge result into final report)
@@ -172,7 +172,8 @@ Previously open questions, now resolved:
 
 ## 9. Phasing / Timeline Considerations
 
-- **Phase 0 (done):** Light, backend-less prototype (LabSlip) — validated the core panel/parameter/report model with one real lab.
+*(Note: LabOS is a new, standalone project — it does not build on or depend on any prior personal tool. Phasing below starts fresh.)*
+
 - **Phase 1:** Real backend, multi-tenancy, patient history, referral/outsourced test tracking, referring-doctor tracking, WhatsApp delivery, basic billing, simple home-collection booking/list. Target: pilot lab (Deswal) fully migrated off paper.
 - **Phase 2:** Expense tracking, cost/profitability visibility, role-based access, offline-tolerant sync (write the sync ADR before starting this), Lab Health dashboard. Onboard a small number of additional labs via word-of-mouth from Phase 1.
 - **Phase 3:** Multi-branch support, barcode tracking, analyzer integration — only once real customer demand signals this is needed.
