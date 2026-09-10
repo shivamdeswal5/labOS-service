@@ -1,0 +1,442 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Panels Bounded Context API
+  description: Test catalog configuration, sections, parameters, bundled packages, and clinical templates
+  version: 1.0.0
+tags:
+  - name: Panels
+    description: Test panels, sections, and parameter definitions
+  - name: Packages
+    description: Multi-panel diagnostic test packages
+  - name: Templates
+    description: System-wide clinical panel templates and seeding
+
+paths:
+  /panels:
+    get:
+      tags: [Panels]
+      summary: List all active test panels for the current lab
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'Haematology'
+      responses:
+        '200':
+          description: Array of test panels with nested sections and parameters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PanelResponse'
+    post:
+      tags: [Panels]
+      summary: Create a custom test panel
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePanelDto'
+      responses:
+        '201':
+          description: Panel created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanelResponse'
+
+  /panels/{id}:
+    get:
+      tags: [Panels]
+      summary: Get panel details by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Panel details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanelResponse'
+        '404':
+          description: Panel not found
+    patch:
+      tags: [Panels]
+      summary: Update panel details (price, name, category)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePanelDto'
+      responses:
+        '200':
+          description: Panel updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanelResponse'
+    delete:
+      tags: [Panels]
+      summary: Soft-delete a test panel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Panel deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /panels/{id}/sections:
+    post:
+      tags: [Panels]
+      summary: Add a section to an existing panel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSectionDto'
+      responses:
+        '201':
+          description: Section created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+
+  /panels/sections/{id}/parameters:
+    post:
+      tags: [Panels]
+      summary: Add a diagnostic parameter with normal ranges to a section
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateParameterDto'
+      responses:
+        '201':
+          description: Parameter created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParameterResponse'
+
+  /packages:
+    get:
+      tags: [Packages]
+      summary: List bundled test packages for the lab
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Array of test packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackageResponse'
+    post:
+      tags: [Packages]
+      summary: Create a bundled diagnostic test package
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePackageDto'
+      responses:
+        '201':
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageResponse'
+
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List system clinical catalog templates (CBC, LFT, KFT, etc.)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available pre-configured templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemplateResponse'
+
+  /templates/seed:
+    post:
+      tags: [Templates]
+      summary: Seed default clinical panel templates into the current lab catalog
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Templates seeded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  seededCount:
+                    type: integer
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreatePanelDto:
+      type: object
+      required: [name, category, price]
+      properties:
+        name:
+          type: string
+          example: 'Complete Blood Count (CBC)'
+        category:
+          type: string
+          example: 'Haematology'
+        price:
+          type: number
+          example: 350.00
+        sortOrder:
+          type: integer
+          example: 1
+
+    UpdatePanelDto:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        sortOrder:
+          type: integer
+
+    CreateSectionDto:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: 'Differential Leucocyte Count (DLC)'
+        sortOrder:
+          type: integer
+          example: 1
+
+    CreateParameterDto:
+      type: object
+      required: [name, inputType]
+      properties:
+        name:
+          type: string
+          example: 'Hemoglobin'
+        nameLocal:
+          type: string
+          example: 'हीमोग्लोबिन'
+        unit:
+          type: string
+          example: 'g/dL'
+        inputType:
+          type: integer
+          enum: [0, 1, 2, 3]
+          description: '0 = NUMBER, 1 = TEXT, 2 = DROPDOWN, 3 = GRID'
+        options:
+          type: array
+          items:
+            type: string
+        method:
+          type: string
+          example: 'Cyanmethemoglobin'
+        normalRange:
+          type: object
+          description: 'Structured JSONB reference interval'
+          example:
+            type: 'numeric'
+            min: 13.0
+            max: 17.0
+            male: { min: 13.0, max: 17.0 }
+            female: { min: 12.0, max: 15.0 }
+        sortOrder:
+          type: integer
+
+    CreatePackageDto:
+      type: object
+      required: [name, price, panelIds]
+      properties:
+        name:
+          type: string
+          example: 'Executive Health Checkup'
+        description:
+          type: string
+        price:
+          type: number
+          example: 1200.00
+        panelIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    PanelResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        labId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        sortOrder:
+          type: integer
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SectionResponse'
+
+    SectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sortOrder:
+          type: integer
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterResponse'
+
+    ParameterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        nameLocal:
+          type: string
+        unit:
+          type: string
+        inputType:
+          type: integer
+        options:
+          type: array
+          items:
+            type: string
+        method:
+          type: string
+        normalRange:
+          type: object
+        sortOrder:
+          type: integer
+
+    PackageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        price:
+          type: number
+        description:
+          type: string
+        panels:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanelResponse'
+
+    TemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        defaultPrice:
+          type: number
+        description:
+          type: string

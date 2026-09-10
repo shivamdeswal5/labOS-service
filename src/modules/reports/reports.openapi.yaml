@@ -1,0 +1,530 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Reports Bounded Context API
+  description: Patient demographics, report orders, paper-like result entry, medical amendments, vector PDF generation, public QR verification, and KPI summary stats
+  version: 1.0.0
+tags:
+  - name: Patients
+    description: Patient registration and clinical history
+  - name: Reports
+    description: Diagnostic report lifecycle (draft, values entry, finalize, amend)
+  - name: PDF
+    description: Vector PDF report compilation and streaming
+  - name: Public
+    description: Unauthenticated public report verification via QR code
+
+paths:
+  /patients:
+    get:
+      tags: [Patients]
+      summary: Search and list patients
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Search by name, phone, or patient ID
+      responses:
+        '200':
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatientResponse'
+    post:
+      tags: [Patients]
+      summary: Register a new patient
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientDto'
+      responses:
+        '201':
+          description: Patient registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+
+  /patients/{id}:
+    get:
+      tags: [Patients]
+      summary: Get patient demographic details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+
+  /patients/{id}/history:
+    get:
+      tags: [Patients]
+      summary: Get historical reports and test parameter trend values for a patient
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient report history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportResponse'
+
+  /reports:
+    get:
+      tags: [Reports]
+      summary: List diagnostic reports with optional status and patient filtering
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [DRAFT, FINALIZED]
+        - name: patientId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Array of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportResponse'
+    post:
+      tags: [Reports]
+      summary: Order a diagnostic report for a patient with selected panels
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportDto'
+      responses:
+        '201':
+          description: Report order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  /reports/dashboard-stats:
+    get:
+      tags: [Reports]
+      summary: Get real-time lab health KPI metrics (today's counts, pending review, overdue, revenue)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current lab dashboard KPI summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStatsDto'
+
+  /reports/{id}:
+    get:
+      tags: [Reports]
+      summary: Get full diagnostic report with all entered values, panels, and amendments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+    delete:
+      tags: [Reports]
+      summary: Soft-delete a report (draft only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report deleted
+
+  /reports/{id}/values:
+    put:
+      tags: [Reports]
+      summary: Enter or update clinical test results for a report (auto-flags abnormal out-of-range values)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnterResultsDto'
+      responses:
+        '200':
+          description: Values saved with abnormal flags computed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  /reports/{id}/finalize:
+    post:
+      tags: [Reports]
+      summary: Finalize and sign off a diagnostic report (triggers async PDF generation and notifications)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks:
+                  type: string
+                  example: 'Microcytic hypochromic blood picture. Correlate clinically.'
+      responses:
+        '200':
+          description: Report finalized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  /reports/{id}/amend:
+    post:
+      tags: [Reports]
+      summary: Record an official medical amendment to an already finalized report
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AmendReportDto'
+      responses:
+        '200':
+          description: Report amended with audit trail recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  /reports/{id}/pdf:
+    get:
+      tags: [PDF]
+      summary: Stream authenticated NABL/ISO-standard vector PDF report
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF binary stream
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /public/reports/{shareToken}:
+    get:
+      tags: [Public]
+      summary: Public report verification endpoint (scanned from QR code on physical report)
+      responses:
+        '200':
+          description: Public view of report verification data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  /public/reports/share/{shareToken}/pdf:
+    get:
+      tags: [Public]
+      summary: Download or stream verified PDF report without authentication
+      parameters:
+        - name: shareToken
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verified PDF document
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreatePatientDto:
+      type: object
+      required: [fullName, phone, sex]
+      properties:
+        fullName:
+          type: string
+          example: 'Amit Sharma'
+        phone:
+          type: string
+          example: '+919812345678'
+        email:
+          type: string
+          format: email
+        ageYears:
+          type: integer
+          example: 38
+        ageMonths:
+          type: integer
+          example: 4
+        sex:
+          type: string
+          enum: [MALE, FEMALE, OTHER]
+        address:
+          type: string
+          example: 'H.No 45, Model Town, Rohtak'
+
+    CreateReportDto:
+      type: object
+      required: [patientId, panelIds]
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        refByDoctorId:
+          type: string
+          format: uuid
+        panelIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    EnterResultsDto:
+      type: object
+      required: [values]
+      properties:
+        remarks:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            required: [parameterId, value]
+            properties:
+              parameterId:
+                type: string
+                format: uuid
+              value:
+                type: string
+                example: '14.2'
+
+    AmendReportDto:
+      type: object
+      required: [reason, updatedValues]
+      properties:
+        reason:
+          type: string
+          example: 'Re-verified sample on secondary analyzer per clinician request'
+        updatedValues:
+          type: array
+          items:
+            type: object
+            required: [parameterId, value]
+            properties:
+              parameterId:
+                type: string
+                format: uuid
+              value:
+                type: string
+
+    DashboardStatsDto:
+      type: object
+      properties:
+        todayPatientsCount:
+          type: integer
+          example: 24
+        todayReportsCount:
+          type: integer
+          example: 31
+        pendingResultsCount:
+          type: integer
+          example: 7
+        readyForReviewCount:
+          type: integer
+          example: 4
+        finalizedTodayCount:
+          type: integer
+          example: 20
+        overdueCount:
+          type: integer
+          example: 1
+        todayRevenue:
+          type: number
+          example: 8450.00
+        pendingCollectionsCount:
+          type: integer
+          example: 3
+
+    PatientResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        labId:
+          type: string
+          format: uuid
+        patientNumber:
+          type: string
+          example: 'P-2026-0042'
+        fullName:
+          type: string
+        phone:
+          type: string
+        ageYears:
+          type: integer
+        sex:
+          type: string
+          enum: [MALE, FEMALE, OTHER]
+        createdAt:
+          type: string
+          format: date-time
+
+    ReportResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        labId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        reportNumber:
+          type: string
+          example: 'R-2026-00108'
+        status:
+          type: string
+          enum: [DRAFT, FINALIZED]
+        sampleStatus:
+          type: string
+          enum: [COLLECTED, PROCESSING, COMPLETED, REJECTED]
+        shareToken:
+          type: string
+        remarks:
+          type: string
+        finalizedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        patient:
+          $ref: '#/components/schemas/PatientResponse'
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportValueResponse'
+
+    ReportValueResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parameterId:
+          type: string
+          format: uuid
+        value:
+          type: string
+        isAbnormal:
+          type: boolean
+        flag:
+          type: string
+          enum: [NORMAL, HIGH, LOW, CRITICAL_HIGH, CRITICAL_LOW, ABNORMAL]

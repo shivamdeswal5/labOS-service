@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Labs Bounded Context API
+  description: Tenancy, lab profile, branding, pathologist signatures, and staff management
+  version: 1.0.0
+tags:
+  - name: Labs
+    description: Lab profile and branding operations
+  - name: Staff
+    description: Staff profiles, roles, and membership management
+
+paths:
+  /labs:
+    post:
+      tags: [Labs]
+      summary: Register a new diagnostic lab tenant
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabDto'
+      responses:
+        '201':
+          description: Lab successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResponse'
+        '400':
+          description: Validation error
+
+  /labs/{id}:
+    get:
+      tags: [Labs]
+      summary: Get lab details by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lab details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResponse'
+        '404':
+          description: Lab not found
+    patch:
+      tags: [Labs]
+      summary: Update lab profile and letterhead branding
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabDto'
+      responses:
+        '200':
+          description: Lab updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResponse'
+
+  /labs/profile/me:
+    get:
+      tags: [Staff]
+      summary: Get current authenticated user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+    patch:
+      tags: [Staff]
+      summary: Update own user profile (signature, qualification)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileDto'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+
+  /labs/members:
+    get:
+      tags: [Staff]
+      summary: List all staff members for the current lab
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of lab members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProfileResponse'
+    post:
+      tags: [Staff]
+      summary: Add or invite a staff member to the lab
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberDto'
+      responses:
+        '201':
+          description: Member invited successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateLabDto:
+      type: object
+      required: [name, address, phoneNumbers]
+      properties:
+        name:
+          type: string
+          example: 'City Diagnostic Centre'
+        address:
+          type: string
+          example: '12 Main Hospital Road, Rohtak, Haryana'
+        phoneNumbers:
+          type: array
+          items:
+            type: string
+          example: ['+919876543210']
+        tagline:
+          type: string
+          example: 'Accurate & Caring Diagnostics'
+        accentColor:
+          type: string
+          example: '#1e3a8a'
+        footerNote:
+          type: string
+          example: 'NOT VALID FOR MEDICO-LEGAL PURPOSES'
+        reportLanguage:
+          type: string
+          example: 'en'
+
+    UpdateLabDto:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phoneNumbers:
+          type: array
+          items:
+            type: string
+        logoUrl:
+          type: string
+          format: uri
+        tagline:
+          type: string
+        accentColor:
+          type: string
+        footerNote:
+          type: string
+        reportLanguage:
+          type: string
+
+    UpdateProfileDto:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: 'Dr. Ramesh Deswal'
+        qualification:
+          type: string
+          example: 'MD (Pathology), DCP'
+        signatureUrl:
+          type: string
+          format: uri
+
+    InviteMemberDto:
+      type: object
+      required: [email, fullName, role]
+      properties:
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        role:
+          type: integer
+          enum: [0, 1, 2]
+          description: '0 = OWNER, 1 = TECHNICIAN, 2 = PATHOLOGIST'
+
+    LabResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+        phoneNumbers:
+          type: array
+          items:
+            type: string
+        logoUrl:
+          type: string
+        accentColor:
+          type: string
+        tagline:
+          type: string
+        footerNote:
+          type: string
+        reportLanguage:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        labId:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [OWNER, TECHNICIAN, PATHOLOGIST]
+        qualification:
+          type: string
+        signatureUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

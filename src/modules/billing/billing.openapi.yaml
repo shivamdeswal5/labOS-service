@@ -1,0 +1,375 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Billing Bounded Context API
+  description: Patient invoicing, line items, payment recording, operational expenses, and financial analytics
+  version: 1.0.0
+tags:
+  - name: Invoices
+    description: Invoicing and payment status
+  - name: Expenses
+    description: Operational lab expenses (reagents, consumables, equipment)
+  - name: Financials
+    description: High-level financial reporting and profit analytics
+
+paths:
+  /invoices:
+    get:
+      tags: [Invoices]
+      summary: List invoices with optional payment status filter
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentStatus
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [UNPAID, PAID, PARTIALLY_PAID]
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvoiceResponse'
+    post:
+      tags: [Invoices]
+      summary: Generate an invoice for a patient/report
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceDto'
+      responses:
+        '201':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+
+  /invoices/{id}:
+    get:
+      tags: [Invoices]
+      summary: Get invoice details with line items and payment history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+
+  /invoices/{id}/payments:
+    post:
+      tags: [Invoices]
+      summary: Record payment towards an invoice (Cash, UPI, Card)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPaymentDto'
+      responses:
+        '200':
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+
+  /expenses:
+    get:
+      tags: [Expenses]
+      summary: List operational expenses
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [REAGENT, CONSUMABLE, EQUIPMENT, RENT, SALARY, UTILITIES, OTHER]
+      responses:
+        '200':
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpenseResponse'
+    post:
+      tags: [Expenses]
+      summary: Record a lab operational expense
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpenseDto'
+      responses:
+        '201':
+          description: Expense recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+
+  /expenses/{id}:
+    get:
+      tags: [Expenses]
+      summary: Get expense details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Expense details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+    patch:
+      tags: [Expenses]
+      summary: Update expense record
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExpenseDto'
+      responses:
+        '200':
+          description: Expense updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+    delete:
+      tags: [Expenses]
+      summary: Delete an expense record
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Expense deleted
+
+  /billing/financial-summary:
+    get:
+      tags: [Financials]
+      summary: Get financial performance summary (revenue, expenses, doctor cuts, net profit)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Financial performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialSummaryResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateInvoiceDto:
+      type: object
+      required: [patientId, items]
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        reportId:
+          type: string
+          format: uuid
+        discount:
+          type: number
+          example: 50.00
+        items:
+          type: array
+          items:
+            type: object
+            required: [name, unitPrice, quantity]
+            properties:
+              name:
+                type: string
+                example: 'Complete Blood Count (CBC)'
+              unitPrice:
+                type: number
+                example: 350.00
+              quantity:
+                type: integer
+                example: 1
+
+    RecordPaymentDto:
+      type: object
+      required: [amount, method]
+      properties:
+        amount:
+          type: number
+          example: 300.00
+        method:
+          type: string
+          enum: [CASH, UPI, CARD, OTHER]
+          example: 'UPI'
+        transactionRef:
+          type: string
+          example: 'UPI/12938491823'
+
+    CreateExpenseDto:
+      type: object
+      required: [title, amount, category, date]
+      properties:
+        title:
+          type: string
+          example: 'CBC Reagent Pack (Sysmex)'
+        amount:
+          type: number
+          example: 4500.00
+        category:
+          type: string
+          enum: [REAGENT, CONSUMABLE, EQUIPMENT, RENT, SALARY, UTILITIES, OTHER]
+        date:
+          type: string
+          format: date
+        vendor:
+          type: string
+          example: 'MediEquip Solutions'
+
+    UpdateExpenseDto:
+      type: object
+      properties:
+        title:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        vendor:
+          type: string
+
+    InvoiceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+          example: 'INV-2026-00084'
+        subtotal:
+          type: number
+        discount:
+          type: number
+        totalAmount:
+          type: number
+        paidAmount:
+          type: number
+        paymentStatus:
+          type: string
+          enum: [UNPAID, PAID, PARTIALLY_PAID]
+        createdAt:
+          type: string
+          format: date-time
+
+    ExpenseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        vendor:
+          type: string
+
+    FinancialSummaryResponse:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+          example: 142500.00
+        totalExpenses:
+          type: number
+          example: 45200.00
+        totalDoctorCommissions:
+          type: number
+          example: 18400.00
+        netProfit:
+          type: number
+          example: 78900.00

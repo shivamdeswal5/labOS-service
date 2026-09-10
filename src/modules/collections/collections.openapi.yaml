@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Collections Bounded Context API
+  description: Phlebotomy home sample collection bookings, technician dispatch, and sample tube tracking
+  version: 1.0.0
+tags:
+  - name: Collections
+    description: Home collection requests and phlebotomist dispatch
+
+paths:
+  /collections:
+    get:
+      tags: [Collections]
+      summary: List home sample collection requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [SCHEDULED, ASSIGNED, IN_TRANSIT, COLLECTED, CANCELLED]
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of collection requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionResponse'
+    post:
+      tags: [Collections]
+      summary: Book a home sample collection request
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionDto'
+      responses:
+        '201':
+          description: Collection booked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+
+  /collections/{id}:
+    get:
+      tags: [Collections]
+      summary: Get collection request details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+
+  /collections/{id}/assign:
+    patch:
+      tags: [Collections]
+      summary: Assign a phlebotomist to a collection booking
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phlebotomistId]
+              properties:
+                phlebotomistId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Phlebotomist assigned
+
+  /collections/{id}/status:
+    patch:
+      tags: [Collections]
+      summary: Update collection status (e.g. COLLECTED with tube barcodes)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [SCHEDULED, ASSIGNED, IN_TRANSIT, COLLECTED, CANCELLED]
+                tubeBarcodes:
+                  type: array
+                  items:
+                    type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Status updated
+
+  /collections/{id}/cancel:
+    post:
+      tags: [Collections]
+      summary: Cancel a home collection request
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: 'Patient requested rescheduling to next week'
+      responses:
+        '200':
+          description: Collection cancelled
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateCollectionDto:
+      type: object
+      required: [patientName, patientPhone, address, scheduledDate, timeSlot]
+      properties:
+        patientName:
+          type: string
+          example: 'Sunita Verma'
+        patientPhone:
+          type: string
+          example: '+919812999999'
+        patientId:
+          type: string
+          format: uuid
+        address:
+          type: string
+          example: 'Plot 12, Sector 14, Rohtak'
+        scheduledDate:
+          type: string
+          format: date
+        timeSlot:
+          type: string
+          example: '08:00 - 09:30 AM'
+        notes:
+          type: string
+          example: 'Fasting sample required for Lipid profile'
+
+    CollectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientName:
+          type: string
+        patientPhone:
+          type: string
+        address:
+          type: string
+        scheduledDate:
+          type: string
+          format: date
+        timeSlot:
+          type: string
+        status:
+          type: string
+          enum: [SCHEDULED, ASSIGNED, IN_TRANSIT, COLLECTED, CANCELLED]
+        phlebotomistId:
+          type: string
+          format: uuid
+        tubeBarcodes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time

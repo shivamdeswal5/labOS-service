@@ -1,0 +1,385 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Referrals Bounded Context API
+  description: Referring doctors, commission ledger & settlement records, and outsourced test management
+  version: 1.0.0
+tags:
+  - name: Doctors
+    description: Referring doctor registry and commission terms
+  - name: Commission
+    description: Doctor commission ledger, calculated payouts, and manual settlements
+  - name: Outsourced
+    description: Outsourced/reference lab sample tracking and result merging
+
+paths:
+  /referrals/doctors:
+    get:
+      tags: [Doctors]
+      summary: List referring doctors
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of referring doctors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoctorResponse'
+    post:
+      tags: [Doctors]
+      summary: Register a referring doctor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDoctorDto'
+      responses:
+        '201':
+          description: Doctor registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorResponse'
+
+  /referrals/doctors/{id}:
+    get:
+      tags: [Doctors]
+      summary: Get doctor details by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Doctor details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorResponse'
+    patch:
+      tags: [Doctors]
+      summary: Update doctor profile or commission agreement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDoctorDto'
+      responses:
+        '200':
+          description: Doctor updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorResponse'
+    delete:
+      tags: [Doctors]
+      summary: Delete referring doctor
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Doctor deleted
+
+  /referrals/commission/doctor/{doctorId}:
+    get:
+      tags: [Commission]
+      summary: Get commission ledger entries for a doctor
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, SETTLED]
+      responses:
+        '200':
+          description: Commission ledger entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommissionLedgerResponse'
+
+  /referrals/commission/summary:
+    get:
+      tags: [Commission]
+      summary: Get summary of all unpaid and settled doctor commissions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Overall commission summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPending:
+                    type: number
+                  totalSettled:
+                    type: number
+
+  /referrals/commission/settle:
+    post:
+      tags: [Commission]
+      summary: Record manual payment/settlement of commission entries
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettleCommissionDto'
+      responses:
+        '200':
+          description: Commissions marked as settled
+
+  /referrals/outsourced:
+    get:
+      tags: [Outsourced]
+      summary: List outsourced test orders sent to reference labs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [SENT, RECEIVED, CANCELLED]
+      responses:
+        '200':
+          description: List of outsourced test records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OutsourcedTestResponse'
+    post:
+      tags: [Outsourced]
+      summary: Mark a test or panel as outsourced to an external reference lab
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOutsourcedTestDto'
+      responses:
+        '201':
+          description: Outsourced record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutsourcedTestResponse'
+
+  /referrals/outsourced/{id}/status:
+    patch:
+      tags: [Outsourced]
+      summary: Update outsourced test status (e.g. RECEIVED with reference lab report values)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [SENT, RECEIVED, CANCELLED]
+                externalReportUrl:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Status updated
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateDoctorDto:
+      type: object
+      required: [name, commissionType]
+      properties:
+        name:
+          type: string
+          example: 'Dr. S.K. Gupta'
+        clinicName:
+          type: string
+          example: 'Gupta Polyclinic'
+        phone:
+          type: string
+          example: '+919876500000'
+        email:
+          type: string
+          format: email
+        commissionType:
+          type: string
+          enum: [PERCENTAGE, FLAT, NONE]
+          example: 'PERCENTAGE'
+        commissionValue:
+          type: number
+          example: 15.00
+
+    UpdateDoctorDto:
+      type: object
+      properties:
+        name:
+          type: string
+        clinicName:
+          type: string
+        phone:
+          type: string
+        commissionType:
+          type: string
+          enum: [PERCENTAGE, FLAT, NONE]
+        commissionValue:
+          type: number
+
+    SettleCommissionDto:
+      type: object
+      required: [ledgerIds, paymentMethod]
+      properties:
+        ledgerIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        paymentMethod:
+          type: string
+          enum: [CASH, UPI, BANK_TRANSFER]
+        notes:
+          type: string
+          example: 'Settled cash on weekly clinic visit'
+
+    CreateOutsourcedTestDto:
+      type: object
+      required: [reportId, testPanelId, referenceLabName, costPrice]
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        testPanelId:
+          type: string
+          format: uuid
+        referenceLabName:
+          type: string
+          example: 'Dr. Lal PathLabs'
+        costPrice:
+          type: number
+          example: 450.00
+        sampleBarcode:
+          type: string
+          example: 'LAL-992384'
+
+    DoctorResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        clinicName:
+          type: string
+        phone:
+          type: string
+        commissionType:
+          type: string
+        commissionValue:
+          type: number
+
+    CommissionLedgerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        reportId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [PENDING, SETTLED]
+        settledAt:
+          type: string
+          format: date-time
+
+    OutsourcedTestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reportId:
+          type: string
+          format: uuid
+        referenceLabName:
+          type: string
+        status:
+          type: string
+          enum: [SENT, RECEIVED, CANCELLED]
+        costPrice:
+          type: number
+        createdAt:
+          type: string
+          format: date-time

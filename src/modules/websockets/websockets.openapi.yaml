@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: LabOS - WebSockets & Real-Time Gateway API
+  description: Real-time Socket.IO gateway, CloudEvents contracts, multi-tenant room isolation, and REST publish fallback
+  version: 1.0.0
+tags:
+  - name: Realtime
+    description: Live event gateway and publishing
+
+paths:
+  /events/publish:
+    post:
+      tags: [Realtime]
+      summary: REST endpoint to publish a real-time event to lab or staff rooms
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishEventDto'
+      responses:
+        '201':
+          description: Event published to WebSocket clients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  traceId:
+                    type: string
+                    format: uuid
+                  deliveredChannels:
+                    type: array
+                    items:
+                      type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    PublishEventDto:
+      type: object
+      required: [event, payload]
+      properties:
+        event:
+          type: string
+          enum:
+            - report.finalized
+            - collection.created
+            - collection.assigned
+            - collection.status_updated
+            - critical.abnormal_result
+        targetRoom:
+          type: string
+          enum: [LAB_ALL, DOCTORS_ONLY, PHLEBOTOMISTS_ONLY, USER_DIRECT]
+          example: 'LAB_ALL'
+        payload:
+          type: object
+          description: Strongly typed event payload
+          example:
+            reportId: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+            reportNumber: 'R-2026-00108'
+            status: 'FINALIZED'
+
+    EventMessageEnvelope:
+      type: object
+      description: Standardized CloudEvents envelope delivered over Socket.IO
+      properties:
+        channels:
+          type: array
+          items:
+            type: string
+          example: ['lab:9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d']
+        event:
+          type: string
+          example: 'report.finalized'
+        timestamp:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+          format: uuid
+        payload:
+          type: object

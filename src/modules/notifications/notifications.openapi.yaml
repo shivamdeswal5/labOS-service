@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: LabOS - Notifications Bounded Context API
+  description: Multi-channel report dispatch (WhatsApp, Email, SMS) and delivery logs
+  version: 1.0.0
+tags:
+  - name: Notifications
+    description: Report delivery dispatch and audit logs
+
+paths:
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notification delivery logs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: channel
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [WHATSAPP, EMAIL, SMS]
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, SENT, DELIVERED, FAILED]
+      responses:
+        '200':
+          description: List of notification logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationLogResponse'
+
+  /notifications/send:
+    post:
+      tags: [Notifications]
+      summary: Dispatch a notification manually
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationDto'
+      responses:
+        '201':
+          description: Notification queued or sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationLogResponse'
+
+  /notifications/resend/{id}:
+    post:
+      tags: [Notifications]
+      summary: Retry or resend a failed notification
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification re-dispatched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationLogResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SendNotificationDto:
+      type: object
+      required: [recipientType, destination, channel, notificationType]
+      properties:
+        recipientType:
+          type: string
+          enum: [PATIENT, DOCTOR, LAB_STAFF]
+        destination:
+          type: string
+          example: '+919812345678'
+        channel:
+          type: string
+          enum: [WHATSAPP, EMAIL, SMS]
+        notificationType:
+          type: string
+          enum: [REPORT_READY, REPORT_AMENDED, COLLECTION_BOOKED, CRITICAL_ALERT]
+        reportId:
+          type: string
+          format: uuid
+        customMessage:
+          type: string
+
+    NotificationLogResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [WHATSAPP, EMAIL, SMS]
+        destination:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, SENT, DELIVERED, FAILED]
+        providerMessageId:
+          type: string
+        errorMessage:
+          type: string
+        sentAt:
+          type: string
+          format: date-time

@@ -1,7 +1,7 @@
 # LabOS — System Architecture
 
 **Status:** Accepted
-**Last updated:** 2026-09-03
+**Last updated:** 2026-09-08
 **Related:** `docs/product/prd.md`
 
 ---
@@ -22,6 +22,34 @@ This document uses a few architectural terms that may be new. Explained here onc
 
 ### Domain-Driven Design (DDD)
 The core idea: structure code around the real business concepts your friend already thinks in — a `Report`, a `TestPanel`, a `ReferringDoctor` — rather than around technical layers like "all database code" or "all API code." Related concepts get grouped together into a **bounded context**: a boundary around one area of the business (e.g. everything about reports lives together, everything about referrals lives together), with its own rules, not reaching into another boundary's internals. Our module list in Section 7 (`panels`, `reports`, `referrals`, `labs`, `notifications`, `billing`, `collections`) — each one *is* a bounded context.
+
+### Aggregates & Aggregate Roots
+An **Aggregate** is a cluster of associated domain objects that we treat as a single transactional unit for data changes. Every aggregate has an **Aggregate Root** (the gateway entity). Outside code can only hold references to the Aggregate Root, never directly to child entities inside the boundary. The Aggregate Root guarantees that all business invariants remain valid.
+- In `panels`: `TestPanel` is the Aggregate Root. `PanelSection` and `PanelParameter` are internal child entities. `TestPackage` is a separate Aggregate Root encapsulating bundled panel items (`PackagePanel`).
+- In `labs`: `Lab` is the Aggregate Root for the tenant organization; `Profile` is the user's membership entity bound to Supabase auth with role permissions.
+- In `reports`: `Report` is the Aggregate Root controlling lifecycle states, encapsulating `ReportPanel`, `ReportValue`, and `ReportAmendment`. `Patient` is the patient demographic aggregate.
+
+### Value Objects
+A **Value Object** is an immutable object defined purely by its attributes, without a persistent conceptual identity (no unique primary key ID). If two value objects have the same attributes, they are structurally equal. Crucially, in a rich domain model, **Value Objects encapsulate their own validation and domain logic** rather than relying on external procedural evaluator functions.
+- In `panels`: `NormalRange` is a rich Value Object defining physiological reference intervals (`numeric`, `gender_specific`, `text`). It contains its own `isOutOfRange(value, sex)` evaluation method, eliminating procedural utility bloat.
+
+### Domain Services
+A **Domain Service** performs domain-specific calculations or operations that do not naturally belong to a single entity or value object. It operates on domain concepts without maintaining mutable state.
+
+### Repository Pattern with Dependency Inversion (DIP)
+To keep the domain and application layers completely decoupled from database mechanics (TypeORM, SQL, drivers):
+- **Domain Layer defines the contract:** Repository interfaces (`IPanelRepository`, `ILabRepository`, `IReportRepository`) live inside `domain/<aggregate>/interfaces/`.
+- **Infrastructure Layer implements the contract:** Concrete repository implementations (`TypeOrmPanelRepository`, etc.) live inside `infrastructure/database/repositories/`.
+- **Application Handlers depend only on the interface:** Use-case handlers receive the repository interface via dependency injection. They never write raw `dataSource.transaction()` or call TypeORM methods directly, ensuring 100% database-agnostic business logic that can be unit-tested without mocking database drivers.
+
+### Direct Handler Injection in Slice Controllers
+For in-process Modular Monolith controllers:
+- Each dedicated slice controller (`create-panel.controller.ts`) directly injects its specific handler (`CreatePanelHandler`).
+- **Why?** It guarantees 100% compile-time type safety for the return type (unlike `commandBus.execute()` which returns `Promise<any>`), provides zero reflection lookup overhead, and allows instant IDE navigation (`Cmd+Click` goes directly to the handler).
+- An internal Event Bus (`EventEmitter2`) is reserved exclusively for cross-boundary **Domain Events** (`ReportFinalizedEvent`), where multiple decoupled subscribers need to react asynchronously.
+
+### Modular Database Migrations
+Rather than using `synchronize: true` (which risks data loss and drift), each bounded context manages its own database migrations inside `infrastructure/database/migrations/`. Npm scripts provide isolated migration runs per module.
 
 ### Modular Monolith
 One deployed application (not many separate services talking over a network), but internally organized into the strict, independent modules described above. You get the simplicity of one codebase and one deployment, while still keeping a clean boundary between concerns — so if a module ever genuinely needs to become its own service later, it's a clean extraction, not a rewrite. The opposite extreme, **microservices** (many independently deployed services), adds real operational cost — network calls between services, distributed transactions, deployment orchestration — that is not justified at our scale and is explicitly rejected here.
@@ -44,7 +72,9 @@ Understanding "what happens when a report is finalized" means hunting across thr
 /finalize-report
   finalize-report.command.ts   ← the request shape
   finalize-report.handler.ts   ← the logic
-  finalize-report.dto.ts       ← validation
+  finalize-report.dto.ts       ← validation class (class-validator)
+  finalize-report.controller.ts← dedicated route endpoint
+  finalize-report.module.ts    ← slice DI module
 ```
 This pairs naturally with CQRS: **each Command or Query IS a vertical slice.** We are not layering a separate architecture on top of CQRS — Vertical Slice is simply how we organize the commands/queries we already decided to use, instead of the older by-layer style. See Section 8 for how this looks in our actual folder structure.
 
@@ -77,7 +107,7 @@ This pairs naturally with CQRS: **each Command or Query IS a vertical slice.** W
 (Full explanations of each term are in Section 2 above; this is the concrete decision list.)
 
 - **Pattern:** Modular Monolith with DDD bounded contexts as modules. Not microservices.
-- **CQRS:** lightweight, in-process, via NestJS's CQRS module. Not distributed/event-sourced.
+- **CQRS:** lightweight, in-process, via direct handler injection (no CQRS bus indirection). Not distributed/event-sourced.
 - **Code organization within each module:** Vertical Slices — one folder per command/query, not one folder per technical layer.
 - **SOLID principles**, applied concretely:
   - *Single Responsibility* — each module owns one domain concern; each slice owns one use case.
@@ -108,71 +138,112 @@ If/when we reach a scale where noisy-neighbor performance or very large lab data
 
 ## 7. Core Backend Modules (DDD bounded contexts, maps to PRD requirements)
 
-- **`panels`** — config-driven test panel/section/parameter engine
-- **`reports`** — patient info, filled results, print/PDF generation trigger, history/search
-- **`referrals`** — outsourced test tracking (send-out status, merge into final report) and referring-doctor tracking (commission ledger, no auto-payout)
-- **`labs`** — tenant/lab profile, branding, settings
-- **`notifications`** — WhatsApp/email report delivery (abstracted behind an interface so the underlying provider can change without touching calling code)
-- **`billing`** — basic per-report invoicing, expense tracking (P1)
-- **`collections`** — simple home-collection booking/list (P1, intentionally simple per PRD scope)
+- **`panels`** — config-driven test panel/section/parameter engine, packages, and onboarding templates
+- **`reports`** — patient info, filled results, print/PDF generation trigger, history/search, amendments, public share token
+- **`referrals`** — outsourced test tracking (send-out status, merge into final report) and referring-doctor tracking (commission ledger & settlement)
+- **`labs`** — tenant/lab profile, branding, team membership, credentials
+- **`notifications`** — WhatsApp/SMS/email report delivery (abstracted behind an interface with WhatsApp Cloud API and mock fallback)
+- **`billing`** — patient invoicing, line items breakdown, payment recording, operational expenses, financial analytics
+- **`collections`** — phlebotomy home sample collection requests, technician dispatch, sample tube barcodes
+- **`websockets`** — real-time bidirectional WebSocket gateway, CloudEvents envelope contracts, multi-tenant room routing, in-process domain event bridging
 
-Each module owns its own commands, queries, domain logic, and repository — never reaches into another module's internals directly. Cross-module reactions happen via Domain Events (Section 2), not direct calls.
+Each module owns its own commands, queries, domain logic, and repository — never reaches into another module's internals directly. Cross-module reactions happen via Domain Events (Section 2) or in-process listeners, not direct cross-boundary calls.
 
 ---
 
 ## 8. Folder Structure — DDD Modules + Vertical Slices + CQRS, together
 
-This is what Sections 2 and 4 look like as an actual repo layout:
+This is what Sections 2 and 4 look like as an actual repo layout (aligned with `residency-backend`):
 
 ```
 /src
   /modules
     /reports                          ← DDD bounded context
-      /commands
-        /finalize-report
-          finalize-report.command.ts
-          finalize-report.handler.ts
-          finalize-report.dto.ts
-        /create-report
-          create-report.command.ts
-          create-report.handler.ts
-          create-report.dto.ts
-      /queries
-        /get-patient-history
-          get-patient-history.query.ts
-          get-patient-history.handler.ts
+      /domain                         ← Core business logic, zero framework imports
+        /report                       ← Report Aggregate Root boundary
+          report.entity.ts
+          report-panel.entity.ts
+          report-value.entity.ts
+          report-amendment.entity.ts
+          /enums                      ← One enum per file (e.g. report-status.enum.ts)
+            report-status.enum.ts
+            sample-status.enum.ts
+          /interfaces                 ← Repository contract (report.repository.interface.ts)
+        /patient                      ← Patient Aggregate Root boundary
+          patient.entity.ts
+          /interfaces
+            patient.repository.interface.ts
+      /features                       ← Vertical Slices (Commands AND Queries)
+        /report                       ← Feature group
+          /create-report              ← Use case slice
+            create-report.command.ts
+            create-report.handler.ts
+            create-report.dto.ts
+            create-report.controller.ts
+            create-report.module.ts
+          /finalize-report
+            finalize-report.command.ts
+            finalize-report.handler.ts
+            finalize-report.dto.ts
+            finalize-report.controller.ts
+            finalize-report.module.ts
+          report-feature.module.ts     ← Bundles all report slice modules
+        /patient
+          /get-patient-history
+            get-patient-history.query.ts
+            get-patient-history.handler.ts
+            get-patient-history.dto.ts
+            get-patient-history.controller.ts
+            get-patient-history.module.ts
+          patient-feature.module.ts
+      /infrastructure                 ← Categorized external concerns
+        /database
+          /repositories               ← Concrete TypeORM implementations (strictly <entity>.repository.ts)
+            report.repository.ts
+            patient.repository.ts
+          /migrations                 ← Dedicated single-table migrations
+            1710000003001-create-patients-table.ts
+            1710000003002-create-reports-table.ts
+            1710000003003-create-report-panels-table.ts
+            1710000003004-create-report-values-table.ts
+            1710000003005-create-report-amendments-table.ts
       /events
         report-finalized.event.ts
-      /domain
-        report.entity.ts
-        report.repository.interface.ts   ← Dependency Inversion: module depends on this interface, not Supabase directly
+        report-finalized.websocket-event.ts
+      reports.module.ts               ← Root bounded context module
+    /panels                           (same shape: features/panel/, features/package/, features/template/)
+    /labs                             (same shape: features/lab/, features/profile/)
+    /referrals                        (same shape: features/doctor/, features/commission/, features/outsourced/)
+    /billing                          (same shape: features/invoice/, features/expense/, features/finance/)
+    /notifications                    (same shape: features/send-notification/, features/resend-notification/)
+    /collections                      (same shape: features/create-collection/, features/assign-phlebotomist/)
+    /websockets                       ← Real-time gateway bounded context
+      /contracts                      ← CloudEvents envelope interfaces & payloads
+        event-message.interface.ts
+        realtime-room.builder.ts
+        /enums/realtime-channel.enum.ts
+        /payloads/
       /infrastructure
-        report.repository.ts             ← the Supabase/Postgres implementation of the interface above
-      reports.module.ts
-    /panels
-      /commands
-        /create-panel  ...
-        /update-parameter  ...
-      /queries
-        /get-panel  ...
-      /domain
-      /infrastructure
-      panels.module.ts
-    /referrals
-      (same shape)
-    /labs
-      (same shape)
-    /notifications
-      (same shape — includes the notification-provider interface for WhatsApp/email abstraction)
-    /billing
-      (same shape)
-    /collections
-      (same shape)
-  /shared
-    /guards           ← role-based access guards used across modules
-    /decorators
-    /utils
-```
+        /gateways                     ← Authenticated Socket.IO gateway
+          events.gateway.ts
+          events-gateway.module.ts
+      /listeners                      ← In-process @OnEvent listeners bridging domain events to socket channels
+        domain-events-bridge.listener.ts
+      /features
+        /publish-event                ← Fallback REST endpoint POST /events/publish
+          publish-event.command.ts
+          publish-event.handler.ts
+          publish-event.dto.ts
+          publish-event.controller.ts
+          publish-event.module.ts
+      websockets.module.ts
+    /shared                           ← Unified shared module (under src/modules/shared)
+      /domain                         ← BaseDomainEntity, WebSocketEvent<T>, shared enums (SexEnum), domain exceptions
+      /constants                      ← Centralized metadata & system constants
+      /guards                         ← Auth & role guards
+      /decorators                     ← CurrentUser, Roles, Public decorators
+      /filters                        ← Global exception filter (maps domain exceptions to HTTP)
+      /infrastructure                 ← Database config, Pino logger, health, Supabase
 
 Each command/query folder is a **vertical slice** — self-contained, easy for a human or an AI tool to open and fully understand without hunting across the codebase. Each top-level module under `/modules` is a **DDD bounded context**. The `/domain` + `/infrastructure` split inside each module is where **Dependency Inversion** lives concretely: domain logic depends on an interface (`report.repository.interface.ts`), and the Supabase-specific implementation is swappable without touching the domain logic.
 
@@ -206,6 +277,52 @@ No component talks to Supabase directly. Domain logic depends on repository inte
 - **Frontend:** Vercel free tier.
 - **Backend (NestJS):** needs a decision — Render free tier (cold starts, but acceptable for this workflow since report-filling doesn't need to round-trip the backend on every keystroke) vs. a small always-on VM (e.g. Oracle Always Free) if cold starts prove annoying in practice. **Suggest starting with Render free tier for simplicity, and only move to a VM if cold starts become a real problem for the pilot lab** — don't solve a problem we don't have yet.
 - **Database/Auth/Storage:** Supabase free tier, as decided below.
+
+---
+
+## 13. WebSockets & Real-Time Gateway Architecture
+
+Real-time capabilities (live report status, home phlebotomy dispatch updates, critical abnormal alerts) are provided by the `websockets` bounded context using **Socket.IO** (`@nestjs/platform-socket.io`).
+
+### 1. Events over Commands
+Pushing updates over WebSockets represents an immutable fact that already happened and was committed to PostgreSQL. Therefore, WebSocket notifications are modeled strictly as **Events** inheriting from `WebSocketEvent<T>`. Commands are reserved exclusively for requests that change state.
+
+### 2. Standardized CloudEvents Envelope (`EventMessage<T>`)
+Every WebSocket message conforms strictly to the CloudEvents envelope standard:
+```typescript
+export interface EventMessage<T = any> {
+  channels: string[];
+  event: RealtimeChannelEnum;
+  timestamp: string;
+  traceId: string;
+  payload: T;
+}
+```
+- **Top-level attributes:** Transport metadata (target channels, event name, ISO timestamp, unique trace UUID).
+- **`payload: T`:** Strongly typed clinical or operational data (no untyped `any`).
+
+### 3. Multi-Tenant Room Isolation (`RealtimeRoomBuilder`)
+Sockets never broadcast globally without tenant scoping. Room names are constructed strictly via `RealtimeRoomBuilder`:
+- `lab:{labId}` — Lab-wide broadcast (new reports, status updates)
+- `lab:{labId}:doctors` — Pathologist-only room (urgent critical alerts)
+- `lab:{labId}:phlebotomists` — Phlebotomy staff room (pickup dispatch requests)
+- `user:{userId}` — Direct user channel (personal assignment notifications)
+
+### 4. Connection Handshake Authentication
+When a client connects to the WebSocket gateway:
+1. Sockets supply their Supabase JWT in `handshake.auth.token` or `handshake.headers.authorization`.
+2. The gateway verifies the token with `SupabaseService.getUserFromToken(token)`.
+3. The gateway fetches the user's `Profile` via `IProfileRepository.findById(userId)`.
+4. Client joins `lab:{labId}` and `user:{userId}`. If `role === PATHOLOGIST`, client also joins `lab:{labId}:doctors`. Unauthenticated connections are disconnected immediately.
+
+### 5. In-Process Domain Event Bridging (Zero Latency)
+To avoid the anti-pattern of an internal service making an HTTP round-trip back to itself, domain events are bridged in memory:
+1. Feature handlers emit domain events via NestJS `EventEmitter2` (e.g. `'report.finalized'`, `'collection.assigned'`).
+2. `DomainEventsBridgeListener` handles these events in-process.
+3. The listener instantiates the appropriate `WebSocketEvent` subclass and calls `EventsGateway.publishToClients(event.getBroadcastPayload())` with microsecond latency.
+
+### 6. REST Publish Fallback (`POST /events/publish`)
+For external integrations or administrative triggers, `PublishEventModule` exposes a guarded REST endpoint that validates channels, event enums, applies tenant-scoping, and broadcasts through the gateway.
 
 ---
 
