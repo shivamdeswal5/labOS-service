@@ -11,7 +11,7 @@ export class ListExpensesHandler {
   constructor(
     @Inject(EXPENSE_REPOSITORY_TOKEN)
     private readonly expenseRepository: IExpenseRepository,
-  ) {}
+  ) { }
 
   async execute(query: ListExpensesQuery): Promise<Expense[]> {
     const { labId, category, startDate, endDate } = query;

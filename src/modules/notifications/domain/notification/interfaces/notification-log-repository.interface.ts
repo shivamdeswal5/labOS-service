@@ -10,6 +10,7 @@ export interface ListNotificationLogsFilters {
   recipientType?: RecipientTypeEnum;
   notificationType?: NotificationTypeEnum;
   destination?: string;
+  reportId?: string;
   page?: number;
   limit?: number;
 }

@@ -3,14 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OutsourcedTest } from 'src/modules/referrals/domain/outsourced/outsourced-test.entity';
 import { IOutsourcedTestRepository } from 'src/modules/referrals/domain/outsourced/interfaces/outsourced-test-repository.interface';
-import { OutsourcedTestStatusEnum } from 'src/modules/referrals/domain/outsourced/enums/outsourced-test-status.enum';
+import {
+  OutsourcedTestStatusEnum,
+  OutsourcedTestStatusEnumMapper,
+} from 'src/modules/referrals/domain/outsourced/enums/outsourced-test-status.enum';
 
 @Injectable()
 export class OutsourcedTestRepository implements IOutsourcedTestRepository {
   constructor(
     @InjectRepository(OutsourcedTest)
     private readonly testRepo: Repository<OutsourcedTest>,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<OutsourcedTest | null> {
     return this.testRepo.findOne({
@@ -35,7 +38,10 @@ export class OutsourcedTestRepository implements IOutsourcedTestRepository {
       .andWhere('test.deleted_at IS NULL');
 
     if (status !== undefined) {
-      query.andWhere('test.status = :status', { status });
+      // CRITICAL: TypeORM QueryBuilder does NOT run ValueTransformer on parameter values.
+      // Must manually convert the string enum to the stored smallint integer.
+      const statusInt = OutsourcedTestStatusEnumMapper[status];
+      query.andWhere('test.status = :status', { status: statusInt });
     }
 
     return query

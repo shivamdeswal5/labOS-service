@@ -6,6 +6,7 @@ export interface IPatientRepository {
   findById(id: string, labId: string): Promise<Patient | null>;
   findByLabId(labId: string, search?: string): Promise<Patient[]>;
   findByPatientNumber(labId: string, patientNumber: string): Promise<Patient | null>;
+  generateNextPatientNumber(labId: string): Promise<string>;
   save(patient: Patient): Promise<Patient>;
   create(data: Partial<Patient>): Promise<Patient>;
   softDelete(id: string, labId: string): Promise<boolean>;

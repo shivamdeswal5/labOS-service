@@ -1,24 +1,26 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { METADATA_KEYS } from '../constants/metadata.constants';
 import { SupabaseService } from '../infrastructure/supabase/supabase.service';
-import { Profile } from 'src/modules/labs/domain/profile/profile.entity';
+import {
+  IProfileRepository,
+  PROFILE_REPOSITORY_TOKEN,
+} from 'src/modules/labs/domain/profile/interfaces/profile.repository.interface';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly supabaseService: SupabaseService,
-    @InjectRepository(Profile)
-    private readonly profileRepository: Repository<Profile>,
-  ) {}
+    @Inject(PROFILE_REPOSITORY_TOKEN)
+    private readonly profileRepository: IProfileRepository,
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(
@@ -44,10 +46,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired authentication token');
     }
 
-    const profile = await this.profileRepository.findOne({
-      where: { id: supabaseUser.id },
-      relations: { lab: true },
-    });
+    const profile = await this.profileRepository.findById(supabaseUser.id);
 
     request.user = {
       id: supabaseUser.id,

@@ -1,5 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -9,7 +8,6 @@ import { ListCollectionsQuery } from './list-collections.query';
 import { CollectionStatusEnum } from '../../domain/collection/enums/collection-status.enum';
 
 @Controller('collections')
-@UseGuards(AuthGuard)
 export class ListCollectionsController {
   constructor(private readonly handler: ListCollectionsHandler) {}
 

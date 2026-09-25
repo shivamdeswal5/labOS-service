@@ -11,7 +11,7 @@ export class ListInvoicesHandler {
   constructor(
     @Inject(INVOICE_REPOSITORY_TOKEN)
     private readonly invoiceRepository: IInvoiceRepository,
-  ) {}
+  ) { }
 
   async execute(query: ListInvoicesQuery): Promise<Invoice[]> {
     const { labId, status, patientId, reportId } = query;

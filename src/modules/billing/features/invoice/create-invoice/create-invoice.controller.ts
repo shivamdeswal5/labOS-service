@@ -1,14 +1,12 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Post, Body } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { CreateInvoiceHandler } from './create-invoice.handler';
 import { CreateInvoiceCommand } from './create-invoice.command';
 import { CreateInvoiceDto } from './create-invoice.dto';
 
-@Controller('billing/invoices')
-@UseGuards(AuthGuard)
+@Controller('invoices')
 export class CreateInvoiceController {
-  constructor(private readonly handler: CreateInvoiceHandler) {}
+  constructor(private readonly handler: CreateInvoiceHandler) { }
 
   @Post()
   async create(

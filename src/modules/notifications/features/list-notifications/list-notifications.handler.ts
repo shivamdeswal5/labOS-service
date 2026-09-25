@@ -32,6 +32,7 @@ export class ListNotificationsHandler {
       recipientType: query.recipientType,
       notificationType: query.notificationType,
       destination: query.destination,
+      reportId: query.reportId,
       page,
       limit,
     });

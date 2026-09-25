@@ -92,7 +92,7 @@ export class Report extends BaseDomainEntity {
   @OneToMany(() => ReportPanel, (rp) => rp.report, { cascade: true, eager: true })
   reportPanels: ReportPanel[];
 
-  @OneToMany(() => ReportValue, (rv) => rv.report, { cascade: true, eager: true })
+  @OneToMany(() => ReportValue, (rv) => rv.report, { eager: true })
   values: ReportValue[];
 
   @OneToMany(() => ReportAmendment, (amendment) => amendment.report)

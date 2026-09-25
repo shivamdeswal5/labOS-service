@@ -20,6 +20,7 @@ export interface IReportRepository {
   findByLabId(labId: string, status?: ReportStatusEnum): Promise<Report[]>;
   findByPatientId(labId: string, patientId: string): Promise<Report[]>;
   getDashboardStats(labId: string): Promise<DashboardStats>;
+  generateNextReportNumber(labId: string): Promise<string>;
   save(report: Report): Promise<Report>;
   create(data: Partial<Report>): Promise<Report>;
   softDelete(id: string, labId: string): Promise<boolean>;

@@ -1,5 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Param } from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -7,10 +6,9 @@ import {
 import { GetInvoiceHandler } from './get-invoice.handler';
 import { GetInvoiceQuery } from './get-invoice.query';
 
-@Controller('billing/invoices')
-@UseGuards(AuthGuard)
+@Controller('invoices')
 export class GetInvoiceController {
-  constructor(private readonly handler: GetInvoiceHandler) {}
+  constructor(private readonly handler: GetInvoiceHandler) { }
 
   @Get(':id')
   async get(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {

@@ -9,7 +9,7 @@ export class PatientRepository implements IPatientRepository {
   constructor(
     @InjectRepository(Patient)
     private readonly patientRepo: Repository<Patient>,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<Patient | null> {
     return this.patientRepo.findOne({
@@ -39,6 +39,30 @@ export class PatientRepository implements IPatientRepository {
     return this.patientRepo.findOne({
       where: { labId, patientNumber },
     });
+  }
+
+  async generateNextPatientNumber(labId: string): Promise<string> {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const datePrefix = `P-${yyyy}${mm}${dd}`;
+
+    const count = await this.patientRepo
+      .createQueryBuilder('patient')
+      .where('patient.lab_id = :labId', { labId })
+      .andWhere('patient.patient_number LIKE :prefix', { prefix: `${datePrefix}-%` })
+      .getCount();
+
+    let seq = count + 1;
+    let candidate = `${datePrefix}-${String(seq).padStart(4, '0')}`;
+
+    while (await this.patientRepo.findOne({ where: { labId, patientNumber: candidate } })) {
+      seq++;
+      candidate = `${datePrefix}-${String(seq).padStart(4, '0')}`;
+    }
+
+    return candidate;
   }
 
   async save(patient: Patient): Promise<Patient> {

@@ -3,6 +3,7 @@ export enum NotificationStatusEnum {
   SENT = 'SENT',
   DELIVERED = 'DELIVERED',
   FAILED = 'FAILED',
+  READ = 'READ',
 }
 
 export const NotificationStatusEnumMapper: Record<NotificationStatusEnum, number> = {
@@ -10,4 +11,5 @@ export const NotificationStatusEnumMapper: Record<NotificationStatusEnum, number
   [NotificationStatusEnum.SENT]: 1,
   [NotificationStatusEnum.DELIVERED]: 2,
   [NotificationStatusEnum.FAILED]: 3,
+  [NotificationStatusEnum.READ]: 4,
 };

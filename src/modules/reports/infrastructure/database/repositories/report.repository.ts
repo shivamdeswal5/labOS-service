@@ -13,7 +13,7 @@ export class ReportRepository implements IReportRepository {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepo: Repository<Report>,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<Report | null> {
     return this.reportRepo.findOne({
@@ -42,6 +42,10 @@ export class ReportRepository implements IReportRepository {
     const query = this.reportRepo
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('report.reportPanels', 'reportPanels')
+      .leftJoinAndSelect('reportPanels.panel', 'panel')
+      .leftJoinAndSelect('report.values', 'values')
+      .leftJoinAndSelect('values.parameter', 'parameter')
       .where('report.lab_id = :labId', { labId })
       .andWhere('report.deleted_at IS NULL');
 
@@ -58,6 +62,10 @@ export class ReportRepository implements IReportRepository {
     return this.reportRepo
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('report.reportPanels', 'reportPanels')
+      .leftJoinAndSelect('reportPanels.panel', 'panel')
+      .leftJoinAndSelect('report.values', 'values')
+      .leftJoinAndSelect('values.parameter', 'parameter')
       .where('report.lab_id = :labId', { labId })
       .andWhere('report.patient_id = :patientId', { patientId })
       .andWhere('report.deleted_at IS NULL')
@@ -125,6 +133,30 @@ export class ReportRepository implements IReportRepository {
       todayRevenue,
       pendingCollectionsCount,
     };
+  }
+
+  async generateNextReportNumber(labId: string): Promise<string> {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const datePrefix = `R-${yyyy}${mm}${dd}`;
+
+    const count = await this.reportRepo
+      .createQueryBuilder('report')
+      .where('report.lab_id = :labId', { labId })
+      .andWhere('report.report_number LIKE :prefix', { prefix: `${datePrefix}-%` })
+      .getCount();
+
+    let seq = count + 1;
+    let candidate = `${datePrefix}-${String(seq).padStart(4, '0')}`;
+
+    while (await this.reportRepo.findOne({ where: { labId, reportNumber: candidate } })) {
+      seq++;
+      candidate = `${datePrefix}-${String(seq).padStart(4, '0')}`;
+    }
+
+    return candidate;
   }
 
   async save(report: Report): Promise<Report> {

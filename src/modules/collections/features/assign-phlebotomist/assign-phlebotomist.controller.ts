@@ -6,7 +6,6 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,7 +15,6 @@ import { AssignPhlebotomistCommand } from './assign-phlebotomist.command';
 import { AssignPhlebotomistDto } from './assign-phlebotomist.dto';
 
 @Controller('collections')
-@UseGuards(AuthGuard)
 export class AssignPhlebotomistController {
   constructor(private readonly handler: AssignPhlebotomistHandler) { }
 

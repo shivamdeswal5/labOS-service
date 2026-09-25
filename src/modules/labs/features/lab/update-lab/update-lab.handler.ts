@@ -17,6 +17,10 @@ export class UpdateLabHandler {
   async execute(command: UpdateLabCommand): Promise<Lab> {
     const { labId, dto } = command;
 
+    if (!labId) {
+      throw new EntityNotFoundException('Laboratory', 'current');
+    }
+
     const lab = await this.labRepository.findById(labId);
     if (!lab) {
       throw new EntityNotFoundException('Laboratory', labId);

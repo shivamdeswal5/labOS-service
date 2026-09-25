@@ -1,12 +1,10 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { GetDashboardStatsHandler } from './get-dashboard-stats.handler';
 import { GetDashboardStatsQuery } from './get-dashboard-stats.query';
 import { DashboardStatsDto } from './get-dashboard-stats.dto';
 
 @Controller('reports')
-@UseGuards(AuthGuard)
 export class GetDashboardStatsController {
   constructor(private readonly handler: GetDashboardStatsHandler) {}
 

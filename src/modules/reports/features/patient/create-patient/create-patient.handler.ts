@@ -18,14 +18,19 @@ export class CreatePatientHandler {
   async execute(command: CreatePatientCommand): Promise<Patient> {
     const { labId, dto } = command;
 
-    const existing = await this.patientRepository.findByPatientNumber(labId, dto.patientNumber);
-    if (existing) {
-      throw new EntityConflictException(`Patient number '${dto.patientNumber}' already exists in this lab`);
+    let patientNumber = dto.patientNumber?.trim();
+    if (!patientNumber) {
+      patientNumber = await this.patientRepository.generateNextPatientNumber(labId);
+    } else {
+      const existing = await this.patientRepository.findByPatientNumber(labId, patientNumber);
+      if (existing) {
+        throw new EntityConflictException(`Patient number '${patientNumber}' already exists in this lab`);
+      }
     }
 
     return this.patientRepository.create({
       labId,
-      patientNumber: dto.patientNumber,
+      patientNumber,
       name: dto.name,
       age: dto.age ?? null,
       dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,

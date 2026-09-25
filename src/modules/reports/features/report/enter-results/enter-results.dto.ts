@@ -29,4 +29,9 @@ export class EnterResultsDto {
   @ArrayMinSize(1, { message: 'At least one result value is required' })
   @Type(() => ResultValueDto)
   values: ResultValueDto[];
+
+  @IsOptional()
+  @IsString()
+  remarks?: string | null;
 }
+

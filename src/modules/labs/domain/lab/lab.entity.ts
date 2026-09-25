@@ -11,7 +11,7 @@ export class Lab extends BaseDomainEntity {
   @Column({ type: 'text' })
   address: string;
 
-  @Column({ type: 'text', array: true, default: '{}' })
+  @Column({ type: 'text', array: true, default: '{}', name: 'phone_numbers' })
   phoneNumbers: string[];
 
   @Column({ type: 'text', name: 'logo_url', nullable: true })

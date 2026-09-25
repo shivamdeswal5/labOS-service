@@ -29,7 +29,7 @@ export class PanelTemplate extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'default_price' })
   defaultPrice: number;
 
   @Column({ type: 'jsonb', name: 'template_data' })

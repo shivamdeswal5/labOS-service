@@ -1,5 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -12,7 +11,6 @@ import { NotificationTypeEnum } from '../../domain/notification/enums/notificati
 import { RecipientTypeEnum } from '../../domain/notification/enums/recipient-type.enum';
 
 @Controller('notifications')
-@UseGuards(AuthGuard)
 export class ListNotificationsController {
   constructor(private readonly handler: ListNotificationsHandler) {}
 
@@ -24,6 +22,7 @@ export class ListNotificationsController {
     @Query('recipientType') recipientType?: RecipientTypeEnum,
     @Query('notificationType') notificationType?: NotificationTypeEnum,
     @Query('destination') destination?: string,
+    @Query('reportId') reportId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
@@ -35,6 +34,7 @@ export class ListNotificationsController {
         recipientType,
         notificationType,
         destination,
+        reportId,
         page,
         limit,
       ),

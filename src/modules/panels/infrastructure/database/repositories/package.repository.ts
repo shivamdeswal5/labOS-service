@@ -13,7 +13,7 @@ export class PackageRepository implements IPackageRepository {
     @InjectRepository(TestPackage)
     private readonly packageRepo: Repository<TestPackage>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<TestPackage | null> {
     return this.packageRepo.findOne({

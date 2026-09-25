@@ -6,15 +6,18 @@ import {
   ICollectionRequestRepository,
   FindCollectionsFilter,
 } from 'src/modules/collections/domain/collection/interfaces/collection-request-repository.interface';
+import {
+  CollectionStatusEnum,
+  CollectionStatusEnumMapper,
+} from 'src/modules/collections/domain/collection/enums/collection-status.enum';
 
 @Injectable()
 export class CollectionRequestRepository
-  implements ICollectionRequestRepository
-{
+  implements ICollectionRequestRepository {
   constructor(
     @InjectRepository(CollectionRequest)
     private readonly repo: Repository<CollectionRequest>,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<CollectionRequest | null> {
     return this.repo.findOne({
@@ -34,7 +37,13 @@ export class CollectionRequestRepository
       .andWhere('cr.deleted_at IS NULL');
 
     if (filter?.status !== undefined) {
-      qb.andWhere('cr.status = :status', { status: filter.status });
+      const statusVal =
+        typeof filter.status === 'string'
+          ? (CollectionStatusEnumMapper[
+              filter.status as CollectionStatusEnum
+            ] ?? filter.status)
+          : filter.status;
+      qb.andWhere('cr.status = :status', { status: statusVal });
     }
 
     if (filter?.phlebotomistId) {

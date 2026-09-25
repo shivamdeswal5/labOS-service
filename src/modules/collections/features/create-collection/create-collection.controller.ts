@@ -1,5 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Post, Body } from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -9,7 +8,6 @@ import { CreateCollectionCommand } from './create-collection.command';
 import { CreateCollectionDto } from './create-collection.dto';
 
 @Controller('collections')
-@UseGuards(AuthGuard)
 export class CreateCollectionController {
   constructor(private readonly handler: CreateCollectionHandler) {}
 

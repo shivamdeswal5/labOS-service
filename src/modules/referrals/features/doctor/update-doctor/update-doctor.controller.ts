@@ -1,12 +1,10 @@
-import { Controller, Patch, Param, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Patch, Param, Body } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { UpdateDoctorHandler } from './update-doctor.handler';
 import { UpdateDoctorCommand } from './update-doctor.command';
 import { UpdateDoctorDto } from './update-doctor.dto';
 
 @Controller('referrals/doctors')
-@UseGuards(AuthGuard)
 export class UpdateDoctorController {
   constructor(private readonly handler: UpdateDoctorHandler) {}
 

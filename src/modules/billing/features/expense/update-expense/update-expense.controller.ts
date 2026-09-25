@@ -1,14 +1,12 @@
-import { Controller, Patch, Param, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Patch, Param, Body } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { UpdateExpenseHandler } from './update-expense.handler';
 import { UpdateExpenseCommand } from './update-expense.command';
 import { UpdateExpenseDto } from './update-expense.dto';
 
-@Controller('billing/expenses')
-@UseGuards(AuthGuard)
+@Controller('expenses')
 export class UpdateExpenseController {
-  constructor(private readonly handler: UpdateExpenseHandler) {}
+  constructor(private readonly handler: UpdateExpenseHandler) { }
 
   @Patch(':id')
   async update(

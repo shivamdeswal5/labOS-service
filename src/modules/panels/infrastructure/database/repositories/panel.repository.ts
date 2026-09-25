@@ -12,7 +12,7 @@ export class PanelRepository implements IPanelRepository {
     @InjectRepository(TestPanel)
     private readonly panelRepo: Repository<TestPanel>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<TestPanel | null> {
     return this.panelRepo.findOne({

@@ -1,12 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Query } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { ListOutsourcedTestsHandler } from './list-outsourced-tests.handler';
 import { ListOutsourcedTestsQuery } from './list-outsourced-tests.query';
 import { OutsourcedTestStatusEnum } from 'src/modules/referrals/domain/outsourced/enums/outsourced-test-status.enum';
 
 @Controller('referrals/outsourced')
-@UseGuards(AuthGuard)
 export class ListOutsourcedTestsController {
   constructor(private readonly handler: ListOutsourcedTestsHandler) {}
 

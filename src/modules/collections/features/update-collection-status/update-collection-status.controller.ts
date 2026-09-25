@@ -6,7 +6,6 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,9 +15,8 @@ import { UpdateCollectionStatusCommand } from './update-collection-status.comman
 import { UpdateCollectionStatusDto } from './update-collection-status.dto';
 
 @Controller('collections')
-@UseGuards(AuthGuard)
 export class UpdateCollectionStatusController {
-  constructor(private readonly handler: UpdateCollectionStatusHandler) {}
+  constructor(private readonly handler: UpdateCollectionStatusHandler) { }
 
   @Patch(':id/status')
   async updateStatus(

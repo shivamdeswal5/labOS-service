@@ -48,4 +48,8 @@ export class ReferringDoctor extends BaseDomainEntity {
 
   @OneToMany(() => DoctorCommissionLedger, (ledger) => ledger.doctor)
   commissionLedgers: DoctorCommissionLedger[];
+
+  pendingAmount?: number;
+  settledAmount?: number;
+  activeCasesCount?: number;
 }

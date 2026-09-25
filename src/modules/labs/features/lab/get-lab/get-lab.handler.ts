@@ -15,6 +15,9 @@ export class GetLabHandler {
   ) {}
 
   async execute(query: GetLabQuery): Promise<Lab> {
+    if (!query.labId) {
+      throw new EntityNotFoundException('Laboratory', 'current');
+    }
     const lab = await this.labRepository.findById(query.labId);
     if (!lab) {
       throw new EntityNotFoundException('Laboratory', query.labId);

@@ -1,11 +1,9 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Query } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { ListDoctorsHandler } from './list-doctors.handler';
 import { ListDoctorsQuery } from './list-doctors.query';
 
 @Controller('referrals/doctors')
-@UseGuards(AuthGuard)
 export class ListDoctorsController {
   constructor(private readonly handler: ListDoctorsHandler) {}
 

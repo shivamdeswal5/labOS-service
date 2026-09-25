@@ -44,6 +44,7 @@ export class EnterResultsHandler {
     return this.dataSource.transaction(async (manager) => {
       await manager.delete(ReportValue, { reportId });
 
+      const newValues: ReportValue[] = [];
       for (const v of dto.values) {
         const parameter = report.reportPanels
           ?.flatMap((rp) => rp.panel?.sections ?? [])
@@ -63,12 +64,19 @@ export class EnterResultsHandler {
           isOutOfRange,
           remarks: v.remarks ?? null,
         });
-        await manager.save(value);
+        newValues.push(value);
       }
 
+      await manager.save(ReportValue, newValues);
+
+      if (dto.remarks !== undefined) {
+        report.remarks = dto.remarks ?? null;
+      }
+
+      report.values = newValues;
       report.sampleStatus = SampleStatusEnum.COMPLETED;
       report.resultsEnteredAt = new Date();
-      await manager.save(report);
+      await manager.save(Report, report);
 
       return manager.findOneOrFail(Report, {
         where: { id: reportId },

@@ -6,7 +6,6 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,9 +15,8 @@ import { ResendNotificationCommand } from './resend-notification.command';
 import { ResendNotificationDto } from './resend-notification.dto';
 
 @Controller('notifications')
-@UseGuards(AuthGuard)
 export class ResendNotificationController {
-  constructor(private readonly handler: ResendNotificationHandler) {}
+  constructor(private readonly handler: ResendNotificationHandler) { }
 
   @Post(':id/resend')
   async resend(

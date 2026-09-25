@@ -1,13 +1,11 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Param } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { GetExpenseHandler } from './get-expense.handler';
 import { GetExpenseQuery } from './get-expense.query';
 
-@Controller('billing/expenses')
-@UseGuards(AuthGuard)
+@Controller('expenses')
 export class GetExpenseController {
-  constructor(private readonly handler: GetExpenseHandler) {}
+  constructor(private readonly handler: GetExpenseHandler) { }
 
   @Get(':id')
   async get(

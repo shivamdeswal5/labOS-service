@@ -11,6 +11,7 @@ export class ListNotificationsQuery {
     public readonly recipientType?: RecipientTypeEnum,
     public readonly notificationType?: NotificationTypeEnum,
     public readonly destination?: string,
+    public readonly reportId?: string,
     public readonly page?: number,
     public readonly limit?: number,
   ) {}

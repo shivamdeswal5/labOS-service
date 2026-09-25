@@ -1,13 +1,11 @@
-import { Controller, Delete, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Delete, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { DeleteExpenseHandler } from './delete-expense.handler';
 import { DeleteExpenseCommand } from './delete-expense.command';
 
-@Controller('billing/expenses')
-@UseGuards(AuthGuard)
+@Controller('expenses')
 export class DeleteExpenseController {
-  constructor(private readonly handler: DeleteExpenseHandler) {}
+  constructor(private readonly handler: DeleteExpenseHandler) { }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

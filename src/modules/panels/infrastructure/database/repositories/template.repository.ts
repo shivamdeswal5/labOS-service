@@ -14,7 +14,7 @@ export class TemplateRepository implements ITemplateRepository {
     @InjectRepository(PanelTemplate)
     private readonly templateRepo: Repository<PanelTemplate>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async findAll(category?: string): Promise<PanelTemplate[]> {
     const where = category ? { category } : {};

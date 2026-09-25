@@ -6,6 +6,22 @@ import {
   INotificationLogRepository,
   ListNotificationLogsFilters,
 } from 'src/modules/notifications/domain/notification/interfaces/notification-log-repository.interface';
+import {
+  NotificationChannelEnum,
+  NotificationChannelEnumMapper,
+} from 'src/modules/notifications/domain/notification/enums/notification-channel.enum';
+import {
+  NotificationStatusEnum,
+  NotificationStatusEnumMapper,
+} from 'src/modules/notifications/domain/notification/enums/notification-status.enum';
+import {
+  NotificationTypeEnum,
+  NotificationTypeEnumMapper,
+} from 'src/modules/notifications/domain/notification/enums/notification-type.enum';
+import {
+  RecipientTypeEnum,
+  RecipientTypeEnumMapper,
+} from 'src/modules/notifications/domain/notification/enums/recipient-type.enum';
 
 @Injectable()
 export class NotificationLogRepository implements INotificationLogRepository {
@@ -38,28 +54,58 @@ export class NotificationLogRepository implements INotificationLogRepository {
       .andWhere('log.deleted_at IS NULL');
 
     if (filters?.channel !== undefined) {
-      qb.andWhere('log.channel = :channel', { channel: filters.channel });
+      const channelVal =
+        typeof filters.channel === 'string'
+          ? (NotificationChannelEnumMapper[
+              filters.channel as NotificationChannelEnum
+            ] ?? filters.channel)
+          : filters.channel;
+      qb.andWhere('log.channel = :channel', { channel: channelVal });
     }
 
     if (filters?.status !== undefined) {
-      qb.andWhere('log.status = :status', { status: filters.status });
+      const statusVal =
+        typeof filters.status === 'string'
+          ? (NotificationStatusEnumMapper[
+              filters.status as NotificationStatusEnum
+            ] ?? filters.status)
+          : filters.status;
+      qb.andWhere('log.status = :status', { status: statusVal });
     }
 
     if (filters?.recipientType !== undefined) {
+      const recipientVal =
+        typeof filters.recipientType === 'string'
+          ? (RecipientTypeEnumMapper[
+              filters.recipientType as RecipientTypeEnum
+            ] ?? filters.recipientType)
+          : filters.recipientType;
       qb.andWhere('log.recipient_type = :recipientType', {
-        recipientType: filters.recipientType,
+        recipientType: recipientVal,
       });
     }
 
     if (filters?.notificationType !== undefined) {
+      const notifTypeVal =
+        typeof filters.notificationType === 'string'
+          ? (NotificationTypeEnumMapper[
+              filters.notificationType as NotificationTypeEnum
+            ] ?? filters.notificationType)
+          : filters.notificationType;
       qb.andWhere('log.notification_type = :notificationType', {
-        notificationType: filters.notificationType,
+        notificationType: notifTypeVal,
       });
     }
 
     if (filters?.destination) {
       qb.andWhere('log.destination LIKE :destination', {
         destination: `%${filters.destination}%`,
+      });
+    }
+
+    if (filters?.reportId) {
+      qb.andWhere("log.payload->>'reportId' = :reportId", {
+        reportId: filters.reportId,
       });
     }
 

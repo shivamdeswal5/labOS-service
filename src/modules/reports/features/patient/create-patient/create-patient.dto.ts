@@ -10,10 +10,10 @@ import {
 import { SexEnum } from 'src/modules/shared/domain/enums/sex.enum';
 
 export class CreatePatientDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  patientNumber: string;
+  patientNumber?: string;
 
   @IsString()
   @IsNotEmpty()

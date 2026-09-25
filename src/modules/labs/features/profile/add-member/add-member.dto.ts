@@ -19,10 +19,10 @@ export class AddMemberDto {
   @MinLength(2)
   fullName: string;
 
-  @IsIn([RoleEnum.TECHNICIAN, RoleEnum.PATHOLOGIST], {
-    message: 'Role must be either TECHNICIAN or PATHOLOGIST',
+  @IsIn([RoleEnum.TECHNICIAN, RoleEnum.PATHOLOGIST, RoleEnum.PHLEBOTOMIST], {
+    message: 'Role must be TECHNICIAN, PATHOLOGIST, or PHLEBOTOMIST',
   })
-  role: RoleEnum.TECHNICIAN | RoleEnum.PATHOLOGIST;
+  role: RoleEnum.TECHNICIAN | RoleEnum.PATHOLOGIST | RoleEnum.PHLEBOTOMIST;
 
   @IsOptional()
   @IsString()

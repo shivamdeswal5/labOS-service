@@ -1,14 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Get, Query } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { ListInvoicesHandler } from './list-invoices.handler';
 import { ListInvoicesQuery } from './list-invoices.query';
 import { PaymentStatusEnum } from 'src/modules/billing/domain/invoice/enums/payment-status.enum';
 
-@Controller('billing/invoices')
-@UseGuards(AuthGuard)
+@Controller('invoices')
 export class ListInvoicesController {
-  constructor(private readonly handler: ListInvoicesHandler) {}
+  constructor(private readonly handler: ListInvoicesHandler) { }
 
   @Get()
   async list(

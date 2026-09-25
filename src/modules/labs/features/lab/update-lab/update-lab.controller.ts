@@ -1,6 +1,4 @@
-import { Controller, Put, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
-import { RolesGuard } from 'src/modules/shared/guards/roles.guard';
+import { Controller, Put, Body } from '@nestjs/common';
 import { Roles } from 'src/modules/shared/decorators/roles.decorator';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { RoleEnum } from 'src/modules/labs/domain/profile/enums/role.enum';
@@ -10,7 +8,6 @@ import { UpdateLabHandler } from './update-lab.handler';
 import { Lab } from 'src/modules/labs/domain/lab/lab.entity';
 
 @Controller('labs')
-@UseGuards(AuthGuard, RolesGuard)
 export class UpdateLabController {
   constructor(private readonly handler: UpdateLabHandler) {}
 

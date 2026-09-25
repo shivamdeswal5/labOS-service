@@ -3,6 +3,11 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+const moduleFilter = process.env.MIGRATION_MODULE;
+const migrationsPattern = moduleFilter
+  ? `dist/modules/${moduleFilter}/infrastructure/database/migrations/*.js`
+  : 'dist/modules/**/infrastructure/database/migrations/*.js';
+
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DATABASE_HOST || 'localhost',
@@ -11,10 +16,9 @@ export const dataSourceOptions: DataSourceOptions = {
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'postgres',
   entities: ['dist/modules/**/domain/**/*.entity.js'],
-  migrations: ['dist/modules/**/infrastructure/database/migrations/*.js'],
+  migrations: [migrationsPattern],
   synchronize: false,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 };
 
 export const AppDataSource = new DataSource(dataSourceOptions);
-export default AppDataSource;

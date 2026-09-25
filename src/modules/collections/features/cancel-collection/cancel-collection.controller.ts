@@ -1,12 +1,12 @@
 import {
   Controller,
   Patch,
+  Post,
   Param,
   Body,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,10 +16,10 @@ import { CancelCollectionCommand } from './cancel-collection.command';
 import { CancelCollectionDto } from './cancel-collection.dto';
 
 @Controller('collections')
-@UseGuards(AuthGuard)
 export class CancelCollectionController {
-  constructor(private readonly handler: CancelCollectionHandler) {}
+  constructor(private readonly handler: CancelCollectionHandler) { }
 
+  @Post(':id/cancel')
   @Patch(':id/cancel')
   async cancel(
     @CurrentUser() user: AuthenticatedUser,

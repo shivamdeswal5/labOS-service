@@ -43,6 +43,11 @@ export class FinalizeReportHandler {
 
     const finalized = await this.reportRepository.save(report);
 
+    const totalPrice = finalized.reportPanels?.reduce(
+      (sum, rp) => sum + (Number(rp.panel?.price) || 0),
+      0,
+    ) ?? 0;
+
     this.eventEmitter.emit(
       'report.finalized',
       new ReportFinalizedEvent(
@@ -53,7 +58,7 @@ export class FinalizeReportHandler {
         finalized.reportNumber,
         finalized.finalizedAt!,
         finalizedByUserId,
-        0,
+        totalPrice,
       ),
     );
 

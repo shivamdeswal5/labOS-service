@@ -8,6 +8,7 @@ import { SupabaseModule } from 'src/modules/shared/infrastructure/supabase/supab
 import { LoggingModule } from 'src/modules/shared/infrastructure/logging/pino-logger.module';
 import { HealthModule } from 'src/modules/shared/infrastructure/health/health.module';
 import { QueueModule } from 'src/modules/shared/infrastructure/queue/queue.module';
+import { GuardsModule } from 'src/modules/shared/guards/guards.module';
 import { LabsModule } from './modules/labs/labs.module';
 import { PanelsModule } from './modules/panels/panels.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -30,6 +31,7 @@ import { WebsocketsModule } from './modules/websockets/websockets.module';
     LoggingModule,
     HealthModule,
     QueueModule,
+    GuardsModule,
 
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],

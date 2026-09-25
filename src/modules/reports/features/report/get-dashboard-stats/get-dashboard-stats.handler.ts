@@ -11,7 +11,7 @@ export class GetDashboardStatsHandler {
   constructor(
     @Inject(REPORT_REPOSITORY_TOKEN)
     private readonly reportRepository: IReportRepository,
-  ) {}
+  ) { }
 
   async execute(query: GetDashboardStatsQuery): Promise<DashboardStatsDto> {
     return this.reportRepository.getDashboardStats(query.labId);

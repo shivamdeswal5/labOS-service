@@ -1,5 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Post, Body } from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -9,7 +8,6 @@ import { PublishEventCommand } from './publish-event.command';
 import { PublishEventDto } from './publish-event.dto';
 
 @Controller('events')
-@UseGuards(AuthGuard)
 export class PublishEventController {
   constructor(private readonly handler: PublishEventHandler) {}
 

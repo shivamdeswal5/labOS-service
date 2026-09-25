@@ -7,14 +7,17 @@ import {
   IDoctorBalance,
   ILabCommissionSummary,
 } from 'src/modules/referrals/domain/commission/interfaces/commission-ledger-repository.interface';
-import { CommissionStatusEnum } from 'src/modules/referrals/domain/commission/enums/commission-status.enum';
+import {
+  CommissionStatusEnum,
+  CommissionStatusEnumMapper,
+} from 'src/modules/referrals/domain/commission/enums/commission-status.enum';
 
 @Injectable()
 export class CommissionLedgerRepository implements ICommissionLedgerRepository {
   constructor(
     @InjectRepository(DoctorCommissionLedger)
     private readonly ledgerRepo: Repository<DoctorCommissionLedger>,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<DoctorCommissionLedger | null> {
     return this.ledgerRepo.findOne({
@@ -61,11 +64,14 @@ export class CommissionLedgerRepository implements ICommissionLedgerRepository {
   }
 
   async getDoctorBalance(labId: string, doctorId: string): Promise<IDoctorBalance> {
+    const pendingVal = CommissionStatusEnumMapper[CommissionStatusEnum.PENDING];
+    const settledVal = CommissionStatusEnumMapper[CommissionStatusEnum.SETTLED];
+
     const raw = await this.ledgerRepo
       .createQueryBuilder('ledger')
       .select([
-        `COALESCE(SUM(CASE WHEN ledger.status = ${CommissionStatusEnum.PENDING ? 0 : 0} THEN ledger.amount ELSE 0 END), 0) AS "pendingAmount"`,
-        `COALESCE(SUM(CASE WHEN ledger.status = ${CommissionStatusEnum.SETTLED ? 1 : 1} THEN ledger.amount ELSE 0 END), 0) AS "settledAmount"`,
+        `COALESCE(SUM(CASE WHEN ledger.status = ${pendingVal} THEN ledger.amount ELSE 0 END), 0) AS "pendingAmount"`,
+        `COALESCE(SUM(CASE WHEN ledger.status = ${settledVal} THEN ledger.amount ELSE 0 END), 0) AS "settledAmount"`,
       ])
       .where('ledger.lab_id = :labId', { labId })
       .andWhere('ledger.doctor_id = :doctorId', { doctorId })
@@ -78,11 +84,14 @@ export class CommissionLedgerRepository implements ICommissionLedgerRepository {
   }
 
   async getLabSummary(labId: string): Promise<ILabCommissionSummary> {
+    const pendingVal = CommissionStatusEnumMapper[CommissionStatusEnum.PENDING];
+    const settledVal = CommissionStatusEnumMapper[CommissionStatusEnum.SETTLED];
+
     const raw = await this.ledgerRepo
       .createQueryBuilder('ledger')
       .select([
-        `COALESCE(SUM(CASE WHEN ledger.status = ${CommissionStatusEnum.PENDING ? 0 : 0} THEN ledger.amount ELSE 0 END), 0) AS "totalPending"`,
-        `COALESCE(SUM(CASE WHEN ledger.status = ${CommissionStatusEnum.SETTLED ? 1 : 1} THEN ledger.amount ELSE 0 END), 0) AS "totalSettled"`,
+        `COALESCE(SUM(CASE WHEN ledger.status = ${pendingVal} THEN ledger.amount ELSE 0 END), 0) AS "totalPending"`,
+        `COALESCE(SUM(CASE WHEN ledger.status = ${settledVal} THEN ledger.amount ELSE 0 END), 0) AS "totalSettled"`,
         'COUNT(DISTINCT ledger.doctor_id) AS "doctorCount"',
       ])
       .where('ledger.lab_id = :labId', { labId })

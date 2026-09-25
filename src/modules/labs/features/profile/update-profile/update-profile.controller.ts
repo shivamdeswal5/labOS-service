@@ -1,5 +1,4 @@
-import { Controller, Put, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Put, Body } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { UpdateProfileDto } from './update-profile.dto';
 import { UpdateProfileCommand } from './update-profile.command';
@@ -7,7 +6,6 @@ import { UpdateProfileHandler } from './update-profile.handler';
 import { Profile } from 'src/modules/labs/domain/profile/profile.entity';
 
 @Controller('labs')
-@UseGuards(AuthGuard)
 export class UpdateProfileController {
   constructor(private readonly handler: UpdateProfileHandler) {}
 

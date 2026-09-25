@@ -1,6 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
-import { RolesGuard } from 'src/modules/shared/guards/roles.guard';
+import { Controller, Post, Body } from '@nestjs/common';
 import { Roles } from 'src/modules/shared/decorators/roles.decorator';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { RoleEnum } from 'src/modules/labs/domain/profile/enums/role.enum';
@@ -10,7 +8,6 @@ import { CreatePanelHandler } from './create-panel.handler';
 import { TestPanel } from 'src/modules/panels/domain/panel/test-panel.entity';
 
 @Controller('panels')
-@UseGuards(AuthGuard, RolesGuard)
 export class CreatePanelController {
   constructor(private readonly handler: CreatePanelHandler) {}
 

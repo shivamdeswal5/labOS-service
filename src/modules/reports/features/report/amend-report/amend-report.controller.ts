@@ -1,12 +1,10 @@
-import { Controller, Post, Param, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Post, Param, Body } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { AmendReportHandler } from './amend-report.handler';
 import { AmendReportCommand } from './amend-report.command';
 import { AmendReportDto } from './amend-report.dto';
 
 @Controller('reports')
-@UseGuards(AuthGuard)
 export class AmendReportController {
   constructor(private readonly handler: AmendReportHandler) {}
 

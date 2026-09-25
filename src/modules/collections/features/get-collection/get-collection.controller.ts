@@ -5,7 +5,6 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -14,9 +13,8 @@ import { GetCollectionHandler } from './get-collection.handler';
 import { GetCollectionQuery } from './get-collection.query';
 
 @Controller('collections')
-@UseGuards(AuthGuard)
 export class GetCollectionController {
-  constructor(private readonly handler: GetCollectionHandler) {}
+  constructor(private readonly handler: GetCollectionHandler) { }
 
   @Get(':id')
   async get(

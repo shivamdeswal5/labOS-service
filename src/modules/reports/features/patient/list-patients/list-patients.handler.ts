@@ -11,7 +11,7 @@ export class ListPatientsHandler {
   constructor(
     @Inject(PATIENT_REPOSITORY_TOKEN)
     private readonly patientRepository: IPatientRepository,
-  ) {}
+  ) { }
 
   async execute(query: ListPatientsQuery): Promise<Patient[]> {
     return this.patientRepository.findByLabId(query.labId, query.search);

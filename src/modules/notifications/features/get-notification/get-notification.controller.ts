@@ -5,7 +5,6 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -14,9 +13,8 @@ import { GetNotificationHandler } from './get-notification.handler';
 import { GetNotificationQuery } from './get-notification.query';
 
 @Controller('notifications')
-@UseGuards(AuthGuard)
 export class GetNotificationController {
-  constructor(private readonly handler: GetNotificationHandler) {}
+  constructor(private readonly handler: GetNotificationHandler) { }
 
   @Get(':id')
   async get(

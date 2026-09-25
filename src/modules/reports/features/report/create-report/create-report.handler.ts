@@ -12,6 +12,13 @@ import {
   IPatientRepository,
   PATIENT_REPOSITORY_TOKEN,
 } from 'src/modules/reports/domain/patient/interfaces/patient.repository.interface';
+import {
+  IInvoiceRepository,
+  INVOICE_REPOSITORY_TOKEN,
+} from 'src/modules/billing/domain/invoice/interfaces/invoice-repository.interface';
+import { Invoice } from 'src/modules/billing/domain/invoice/invoice.entity';
+import { InvoiceItem } from 'src/modules/billing/domain/invoice/invoice-item.entity';
+import { PaymentStatusEnum } from 'src/modules/billing/domain/invoice/enums/payment-status.enum';
 import { EntityNotFoundException } from 'src/modules/shared/domain/exceptions/entity-not-found.exception';
 import { EntityConflictException } from 'src/modules/shared/domain/exceptions/entity-conflict.exception';
 import { ReportStatusEnum } from 'src/modules/reports/domain/report/enums/report-status.enum';
@@ -24,6 +31,8 @@ export class CreateReportHandler {
     private readonly reportRepository: IReportRepository,
     @Inject(PATIENT_REPOSITORY_TOKEN)
     private readonly patientRepository: IPatientRepository,
+    @Inject(INVOICE_REPOSITORY_TOKEN)
+    private readonly invoiceRepository: IInvoiceRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -35,10 +44,15 @@ export class CreateReportHandler {
       throw new EntityNotFoundException('Patient', dto.patientId);
     }
 
-    const reports = await this.reportRepository.findByLabId(labId);
-    const reportNumberTaken = reports.some((r) => r.reportNumber === dto.reportNumber);
-    if (reportNumberTaken) {
-      throw new EntityConflictException(`Report number '${dto.reportNumber}' already exists in this lab`);
+    let reportNumber = dto.reportNumber?.trim();
+    if (!reportNumber) {
+      reportNumber = await this.reportRepository.generateNextReportNumber(labId);
+    } else {
+      const reports = await this.reportRepository.findByLabId(labId);
+      const reportNumberTaken = reports.some((r) => r.reportNumber === reportNumber);
+      if (reportNumberTaken) {
+        throw new EntityConflictException(`Report number '${reportNumber}' already exists in this lab`);
+      }
     }
 
     const shareToken = randomBytes(32).toString('hex');
@@ -47,7 +61,7 @@ export class CreateReportHandler {
       const report = manager.create(Report, {
         labId,
         patientId: dto.patientId,
-        reportNumber: dto.reportNumber,
+        reportNumber,
         refByDoctorId: dto.refByDoctorId ?? null,
         status: ReportStatusEnum.DRAFT,
         sampleStatus: SampleStatusEnum.COLLECTED,
@@ -65,13 +79,93 @@ export class CreateReportHandler {
         await manager.save(reportPanel);
       }
 
-      return manager.findOneOrFail(Report, {
+      const reportWithPanels = await manager.findOneOrFail(Report, {
         where: { id: savedReport.id },
         relations: {
           patient: true,
           reportPanels: { panel: true },
         },
       });
+
+      // ─── ORDER-TO-CASH INVOICING ───────────────────────────────────────────────
+      // Generate sequential invoice number within this transaction
+      const year = new Date().getFullYear();
+      const count = await manager.count(Invoice, { where: { labId } });
+      let seq = count + 1;
+      let invoiceNumber = `INV-${year}-${String(seq).padStart(4, '0')}`;
+      while (await manager.findOne(Invoice, { where: { labId, invoiceNumber } })) {
+        seq += 1;
+        invoiceNumber = `INV-${year}-${String(seq).padStart(4, '0')}`;
+      }
+
+      let subtotal = 0;
+      const invoiceItems: Partial<InvoiceItem>[] = [];
+
+      for (const rp of reportWithPanels.reportPanels) {
+        const itemPrice = Number(rp.panel?.price) || 0;
+        subtotal += itemPrice;
+        invoiceItems.push({
+          description: rp.panel?.name || 'Diagnostic Investigation Panel',
+          unitPrice: itemPrice,
+          quantity: 1,
+          total: itemPrice,
+        });
+      }
+
+      const discount = Number(dto.billing?.discount) || 0;
+      const totalAmount = Math.max(0, subtotal - discount);
+
+      // Determine upfront payment status
+      const paymentMethod = dto.billing?.paymentMethod ?? null;
+      const isPaidUpfront =
+        dto.billing?.paymentStatus === PaymentStatusEnum.PAID ||
+        (paymentMethod !== null && dto.billing?.paymentStatus !== PaymentStatusEnum.UNPAID);
+
+      const paidAmount = isPaidUpfront
+        ? (Number(dto.billing?.paidAmount) || totalAmount)
+        : (Number(dto.billing?.paidAmount) || 0);
+
+      let paymentStatus = PaymentStatusEnum.UNPAID;
+      if (paidAmount >= totalAmount && totalAmount > 0) {
+        paymentStatus = PaymentStatusEnum.PAID;
+      } else if (paidAmount > 0) {
+        paymentStatus = PaymentStatusEnum.PARTIALLY_PAID;
+      }
+
+      const paidAt = isPaidUpfront && paidAmount > 0 ? new Date() : null;
+
+      // Save invoice inside the same transaction manager so savedReport.id is visible
+      const invoiceEntity = manager.create(Invoice, {
+        labId,
+        patientId: dto.patientId,
+        reportId: savedReport.id,
+        invoiceNumber,
+        subtotal,
+        discount,
+        totalAmount,
+        paidAmount,
+        paymentStatus,
+        paymentMethod: isPaidUpfront ? paymentMethod : null,
+        paidAt,
+        notes: dto.billing?.notes ?? `Auto-generated intake invoice for Report ${reportNumber}`,
+      });
+      const savedInvoice = await manager.save(Invoice, invoiceEntity);
+
+      for (const item of invoiceItems) {
+        const itemEntity = manager.create(InvoiceItem, {
+          ...item,
+          invoiceId: savedInvoice.id,
+        });
+        await manager.save(InvoiceItem, itemEntity);
+      }
+
+      const loadedInvoice = await manager.findOne(Invoice, {
+        where: { id: savedInvoice.id },
+        relations: { items: true },
+      });
+
+      (reportWithPanels as unknown as { invoice: unknown }).invoice = loadedInvoice;
+      return reportWithPanels;
     });
   }
 }

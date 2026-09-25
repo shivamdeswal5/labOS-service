@@ -1,14 +1,12 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Post, Body } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from 'src/modules/shared/decorators/current-user.decorator';
 import { CreateExpenseHandler } from './create-expense.handler';
 import { CreateExpenseCommand } from './create-expense.command';
 import { CreateExpenseDto } from './create-expense.dto';
 
-@Controller('billing/expenses')
-@UseGuards(AuthGuard)
+@Controller('expenses')
 export class CreateExpenseController {
-  constructor(private readonly handler: CreateExpenseHandler) {}
+  constructor(private readonly handler: CreateExpenseHandler) { }
 
   @Post()
   async create(

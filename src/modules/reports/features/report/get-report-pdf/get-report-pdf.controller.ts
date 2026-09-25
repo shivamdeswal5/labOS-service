@@ -1,6 +1,5 @@
-import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -9,7 +8,6 @@ import { GetReportPdfHandler } from './get-report-pdf.handler';
 import { GetReportPdfQuery } from './get-report-pdf.query';
 
 @Controller('reports')
-@UseGuards(AuthGuard)
 export class GetReportPdfController {
   constructor(private readonly handler: GetReportPdfHandler) {}
 

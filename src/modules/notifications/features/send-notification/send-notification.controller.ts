@@ -1,5 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/modules/shared/guards/auth.guard';
+import { Controller, Post, Body } from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -9,7 +8,6 @@ import { SendNotificationCommand } from './send-notification.command';
 import { SendNotificationDto } from './send-notification.dto';
 
 @Controller('notifications')
-@UseGuards(AuthGuard)
 export class SendNotificationController {
   constructor(private readonly handler: SendNotificationHandler) {}
 

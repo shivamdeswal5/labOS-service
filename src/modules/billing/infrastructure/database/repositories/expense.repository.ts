@@ -8,7 +8,10 @@ import {
   FindExpensesFilter,
   IFinancialSummary,
 } from 'src/modules/billing/domain/expense/interfaces/expense-repository.interface';
-import { ExpenseCategoryEnum } from 'src/modules/billing/domain/expense/enums/expense-category.enum';
+import {
+  ExpenseCategoryEnum,
+  ExpenseCategoryEnumMapper,
+} from 'src/modules/billing/domain/expense/enums/expense-category.enum';
 import { PaymentMethodEnum } from 'src/modules/billing/domain/invoice/enums/payment-method.enum';
 
 @Injectable()
@@ -17,7 +20,7 @@ export class ExpenseRepository implements IExpenseRepository {
     @InjectRepository(Expense)
     private readonly expenseRepo: Repository<Expense>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async findById(id: string, labId: string): Promise<Expense | null> {
     return this.expenseRepo.findOne({
@@ -35,7 +38,12 @@ export class ExpenseRepository implements IExpenseRepository {
       .andWhere('expense.deleted_at IS NULL');
 
     if (filter?.category !== undefined) {
-      query.andWhere('expense.category = :category', { category: filter.category });
+      const categoryVal =
+        typeof filter.category === 'string'
+          ? (ExpenseCategoryEnumMapper[filter.category as ExpenseCategoryEnum] ??
+            filter.category)
+          : filter.category;
+      query.andWhere('expense.category = :category', { category: categoryVal });
     }
 
     if (filter?.startDate) {
