@@ -39,6 +39,14 @@ export class Lab extends BaseDomainEntity {
   })
   reportLanguage: ReportLanguageEnum;
 
+  @Column({
+    type: 'jsonb',
+    name: 'print_settings',
+    nullable: true,
+    default: () => "'{}'",
+  })
+  printSettings: Record<string, any> | null;
+
   @OneToMany(() => Profile, (profile) => profile.lab)
   profiles: Profile[];
 }

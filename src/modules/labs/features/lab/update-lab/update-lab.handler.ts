@@ -34,6 +34,7 @@ export class UpdateLabHandler {
     if (dto.tagline !== undefined) lab.tagline = dto.tagline;
     if (dto.footerNote !== undefined) lab.footerNote = dto.footerNote;
     if (dto.reportLanguage !== undefined) lab.reportLanguage = dto.reportLanguage;
+    if (dto.printSettings !== undefined) lab.printSettings = dto.printSettings;
 
     return this.labRepository.save(lab);
   }

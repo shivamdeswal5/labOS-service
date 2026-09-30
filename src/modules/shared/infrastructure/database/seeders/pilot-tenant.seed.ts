@@ -94,8 +94,8 @@ export async function seedPilotTenant(dataSource: DataSource): Promise<void> {
       id: '4aaabed8-3df0-4569-8b9f-6fcc85ecc780', // Anchor profile ID
       labId: PILOT_LAB_ID,
       role: RoleEnum.OWNER,
-      fullName: 'Dr. Deswal',
-      qualification: 'MBBS, MD (Pathology)',
+      fullName: 'Deswal',
+      qualification: undefined,
     });
     await profileRepo.save(profile);
     logger.log('Pathologist profile created.');

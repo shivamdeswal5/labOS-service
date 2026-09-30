@@ -48,4 +48,7 @@ export class UpdateLabDto {
   @IsOptional()
   @IsEnum(ReportLanguageEnum)
   reportLanguage?: ReportLanguageEnum;
+
+  @IsOptional()
+  printSettings?: Record<string, any>;
 }
