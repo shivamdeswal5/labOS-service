@@ -9,6 +9,7 @@ import { AllExceptionsFilter } from 'src/modules/shared/filters/all-exception.fi
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
+    rawBody: true,
   });
 
   const configService = app.get(ConfigService);

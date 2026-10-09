@@ -17,6 +17,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { WebsocketsModule } from './modules/websockets/websockets.module';
+import { PlatformBillingModule } from './modules/platform-billing/platform-billing.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { WebsocketsModule } from './modules/websockets/websockets.module';
     NotificationsModule,
     CollectionsModule,
     WebsocketsModule,
+    PlatformBillingModule,
   ],
   providers: [
     {

@@ -3,16 +3,11 @@ import { APP_GUARD } from '@nestjs/core';
 import { LabsDatabaseModule } from 'src/modules/labs/infrastructure/database/labs-database.module';
 import { AuthGuard } from './auth.guard';
 import { RolesGuard } from './roles.guard';
+import { SuperAdminGuard } from './super-admin.guard';
 
 /**
- * GuardsModule — globally registers AuthGuard and RolesGuard as APP_GUARD singletons.
- *
- * By registering guards here with APP_GUARD, NestJS resolves their dependencies at
- * the AppModule level. This avoids the anti-pattern of importing LabsDatabaseModule
- * (or any other provider module) into every feature module just to satisfy guard deps.
- *
- * The @Global() decorator ensures that any feature module can use @UseGuards(AuthGuard)
- * and @UseGuards(RolesGuard) decorators without additional imports.
+ * GuardsModule — globally registers AuthGuard and RolesGuard as APP_GUARD singletons,
+ * and provides SuperAdminGuard for platform admin routes.
  */
 @Global()
 @Module({
@@ -20,6 +15,7 @@ import { RolesGuard } from './roles.guard';
   providers: [
     AuthGuard,
     RolesGuard,
+    SuperAdminGuard,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
@@ -29,6 +25,6 @@ import { RolesGuard } from './roles.guard';
       useClass: RolesGuard,
     },
   ],
-  exports: [AuthGuard, RolesGuard],
+  exports: [AuthGuard, RolesGuard, SuperAdminGuard],
 })
 export class GuardsModule {}

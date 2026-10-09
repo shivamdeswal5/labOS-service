@@ -5,6 +5,7 @@ export const LAB_REPOSITORY_TOKEN = Symbol('ILabRepository');
 
 export interface ILabRepository {
   findById(id: string): Promise<Lab | null>;
+  findAll(): Promise<Lab[]>;
   save(lab: Lab): Promise<Lab>;
   createLabWithOwner(labData: Partial<Lab>, profileData: Partial<Profile>): Promise<Lab>;
 }

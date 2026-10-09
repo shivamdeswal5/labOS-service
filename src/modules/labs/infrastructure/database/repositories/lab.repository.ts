@@ -20,6 +20,13 @@ export class LabRepository implements ILabRepository {
     });
   }
 
+  async findAll(): Promise<Lab[]> {
+    return this.labRepo.find({
+      relations: { profiles: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async save(lab: Lab): Promise<Lab> {
     return this.labRepo.save(lab);
   }
