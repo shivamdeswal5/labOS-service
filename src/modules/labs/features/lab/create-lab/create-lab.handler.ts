@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateLabCommand } from './create-lab.command';
 import { Lab } from 'src/modules/labs/domain/lab/lab.entity';
 import { RoleEnum } from 'src/modules/labs/domain/profile/enums/role.enum';
@@ -11,6 +12,7 @@ import {
   PROFILE_REPOSITORY_TOKEN,
 } from 'src/modules/labs/domain/profile/interfaces/profile.repository.interface';
 import { EntityConflictException } from 'src/modules/shared/domain/exceptions/entity-conflict.exception';
+import { LabCreatedEvent } from 'src/modules/labs/domain/lab/events/lab-created.event';
 
 @Injectable()
 export class CreateLabHandler {
@@ -19,6 +21,7 @@ export class CreateLabHandler {
     private readonly labRepository: ILabRepository,
     @Inject(PROFILE_REPOSITORY_TOKEN)
     private readonly profileRepository: IProfileRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(command: CreateLabCommand): Promise<Lab> {
@@ -29,7 +32,7 @@ export class CreateLabHandler {
       throw new EntityConflictException('User is already registered with a laboratory');
     }
 
-    return this.labRepository.createLabWithOwner(
+    const createdLab = await this.labRepository.createLabWithOwner(
       {
         name: dto.name,
         address: dto.address,
@@ -46,5 +49,21 @@ export class CreateLabHandler {
         role: RoleEnum.OWNER,
       },
     );
+
+    // Emit domain event to decouple billing trial provisioning and downstream integrations
+    this.eventEmitter.emit(
+      'lab.created',
+      new LabCreatedEvent(
+        createdLab.id,
+        createdLab.name,
+        userId,
+        dto.ownerFullName,
+        dto.planSlug,
+        dto.billingCycle,
+      ),
+    );
+
+    return createdLab;
   }
 }
+

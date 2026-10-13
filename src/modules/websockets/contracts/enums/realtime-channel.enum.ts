@@ -8,4 +8,6 @@ export enum RealtimeChannelEnum {
   ALERT_CRITICAL_VALUE = 'alert:critical_value',
   BILLING_PAYMENT_RECORDED = 'billing:payment_recorded',
   SUBSCRIPTION_ACTIVATED = 'subscription:activated',
+  SUBSCRIPTION_UPDATED = 'subscription:updated',
+  SUBSCRIPTION_LOCKED = 'subscription:locked',
 }

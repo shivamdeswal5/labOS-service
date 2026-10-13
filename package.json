@@ -39,6 +39,8 @@
     "migration:undo:collections": "npm run build && MIGRATION_MODULE=collections typeorm migration:revert -d dist/modules/shared/infrastructure/database/config/data-source.js",
     "migration:up:notifications": "npm run build && MIGRATION_MODULE=notifications typeorm migration:run -d dist/modules/shared/infrastructure/database/config/data-source.js",
     "migration:undo:notifications": "npm run build && MIGRATION_MODULE=notifications typeorm migration:revert -d dist/modules/shared/infrastructure/database/config/data-source.js",
+    "migration:up:platform-billing": "npm run build && MIGRATION_MODULE=platform-billing typeorm migration:run -d dist/modules/shared/infrastructure/database/config/data-source.js",
+    "migration:undo:platform-billing": "npm run build && MIGRATION_MODULE=platform-billing typeorm migration:revert -d dist/modules/shared/infrastructure/database/config/data-source.js",
     "seed:run": "npm run build && node dist/seed.js",
     "seed:run:panels": "npm run build && SEED_MODULE=panels node dist/seed.js",
     "seed": "npm run seed:run"

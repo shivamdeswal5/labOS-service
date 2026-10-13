@@ -51,7 +51,6 @@ services:
     restart: on-failure
     tty: true
     stdin_open: true
-    command: npm run start:dev
     expose:
       - '${PORT:-8080}'
 networks:

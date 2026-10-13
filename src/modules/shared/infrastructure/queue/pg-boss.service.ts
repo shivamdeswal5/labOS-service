@@ -116,6 +116,7 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
+      await this.boss.createQueue(name).catch(() => {});
       await this.boss.work(name, async (jobs: any) => {
         const jobList = Array.isArray(jobs) ? jobs : [jobs];
         for (const job of jobList) {

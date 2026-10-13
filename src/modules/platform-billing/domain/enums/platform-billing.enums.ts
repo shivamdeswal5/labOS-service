@@ -10,6 +10,7 @@ export enum SubscriptionStatusEnum {
   GRACE_PERIOD = 'GRACE_PERIOD',
   LOCKED = 'LOCKED',
   CANCELED = 'CANCELED',
+  SUSPENDED = 'SUSPENDED',
 }
 
 export enum BillingCycleEnum {

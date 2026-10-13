@@ -54,4 +54,13 @@ export class CreateLabDto {
   @IsNotEmpty({ message: 'Owner full name is required' })
   @MinLength(2)
   ownerFullName: string;
+
+  @IsOptional()
+  @IsString()
+  planSlug?: string;
+
+  @IsOptional()
+  @IsString()
+  billingCycle?: string;
 }
+

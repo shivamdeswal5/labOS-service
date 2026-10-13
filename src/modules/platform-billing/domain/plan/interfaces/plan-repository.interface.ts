@@ -2,6 +2,7 @@ import { PlatformPlan } from '../../entities/platform-plan.entity';
 import { PlanSlugEnum } from '../../enums/platform-billing.enums';
 
 export interface IPlanRepository {
+  findAll(): Promise<PlatformPlan[]>;
   findPublicPlans(): Promise<PlatformPlan[]>;
   findBySlug(slug: PlanSlugEnum): Promise<PlatformPlan | null>;
   findById(id: string): Promise<PlatformPlan | null>;

@@ -12,6 +12,12 @@ export class PlanRepository implements IPlanRepository {
     private readonly repo: Repository<PlatformPlan>,
   ) {}
 
+  async findAll(): Promise<PlatformPlan[]> {
+    return this.repo.find({
+      order: { monthlyPriceInr: 'ASC' },
+    });
+  }
+
   async findPublicPlans(): Promise<PlatformPlan[]> {
     return this.repo.find({
       where: { isActive: true, isPublic: true },
