@@ -38,8 +38,10 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
       'postgres',
     );
     const database = this.configService.get<string>('DATABASE_NAME', 'postgres');
-    const isProduction =
-      this.configService.get<string>('NODE_ENV') === 'production';
+    const isSslRequired =
+      this.configService.get<string>('NODE_ENV') === 'production' ||
+      this.configService.get<string>('DATABASE_SSL') === 'true' ||
+      this.configService.get<string>('DATABASE_HOST', '').includes('supabase');
 
     try {
       this.boss = new PgBoss({
@@ -48,7 +50,7 @@ export class PgBossService implements OnModuleInit, OnModuleDestroy {
         user,
         password,
         database,
-        ssl: isProduction ? { rejectUnauthorized: false } : false,
+        ssl: isSslRequired ? { rejectUnauthorized: false } : false,
         max: 5,
       });
 

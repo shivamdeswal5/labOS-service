@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => {
   const isProd = configService.get<string>('NODE_ENV') === 'production';
+  const isCloudOrSsl =
+    isProd ||
+    configService.get<string>('DATABASE_SSL') === 'true' ||
+    configService.get<string>('DATABASE_HOST', '').includes('supabase');
 
   return {
     type: 'postgres',
@@ -13,7 +17,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     database: configService.get<string>('DATABASE_NAME', 'postgres'),
     autoLoadEntities: true,
     synchronize: false,
-    ssl: isProd ? { rejectUnauthorized: false } : false,
+    ssl: isCloudOrSsl ? { rejectUnauthorized: false } : false,
     logging: !isProd,
   };
 };
