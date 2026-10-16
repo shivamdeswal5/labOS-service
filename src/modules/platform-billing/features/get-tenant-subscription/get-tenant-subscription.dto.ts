@@ -21,6 +21,13 @@ export class TenantSubscriptionResponseDto {
   daysRemaining: number;
   effectiveEntitlements: Record<string, any>;
 
+  scheduledPlanId: string | null;
+  scheduledPlanSlug: PlanSlugEnum | null;
+  scheduledPlanName: string | null;
+  scheduledBillingCycle: BillingCycleEnum | null;
+  scheduledAt: string | null;
+  customerGstin: string | null;
+
   isTrialing: boolean;
   isActive: boolean;
   isGracePeriod: boolean;
@@ -48,6 +55,12 @@ export class TenantSubscriptionResponseDto {
       dto.gracePeriodEnd = null;
       dto.daysRemaining = 14;
       dto.effectiveEntitlements = {};
+      dto.scheduledPlanId = null;
+      dto.scheduledPlanSlug = null;
+      dto.scheduledPlanName = null;
+      dto.scheduledBillingCycle = null;
+      dto.scheduledAt = null;
+      dto.customerGstin = null;
       dto.isTrialing = true;
       dto.isActive = false;
       dto.isGracePeriod = false;
@@ -76,6 +89,12 @@ export class TenantSubscriptionResponseDto {
       ...subscription.customEntitlementOverrides,
     };
 
+    dto.scheduledPlanId = subscription.scheduledPlanId || null;
+    dto.scheduledPlanSlug = (subscription.scheduledPlan?.slug as PlanSlugEnum) || null;
+    dto.scheduledPlanName = subscription.scheduledPlan?.name || null;
+    dto.scheduledBillingCycle = subscription.scheduledBillingCycle || null;
+    dto.scheduledAt = subscription.scheduledAt ? new Date(subscription.scheduledAt).toISOString() : null;
+    dto.customerGstin = subscription.customerGstin || null;
 
     dto.isTrialing = subscription.status === SubscriptionStatusEnum.TRIALING;
     dto.isActive = subscription.status === SubscriptionStatusEnum.ACTIVE;

@@ -42,12 +42,24 @@ export class SupabaseService {
     fileBuffer: Buffer,
     contentType: string,
   ): Promise<string> {
-    const { error } = await this.client.storage
+    let { error } = await this.client.storage
       .from(bucket)
       .upload(filePath, fileBuffer, {
         contentType,
         upsert: true,
       });
+
+    if (error && error.message.toLowerCase().includes('bucket not found')) {
+      this.logger.warn(`Storage bucket '${bucket}' not found. Auto-creating public bucket...`);
+      await this.client.storage.createBucket(bucket, { public: true });
+      const retry = await this.client.storage
+        .from(bucket)
+        .upload(filePath, fileBuffer, {
+          contentType,
+          upsert: true,
+        });
+      error = retry.error;
+    }
 
     if (error) {
       this.logger.error(`Failed to upload file to ${bucket}/${filePath}: ${error.message}`);

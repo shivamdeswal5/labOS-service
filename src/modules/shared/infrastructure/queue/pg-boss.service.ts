@@ -18,6 +18,7 @@ export interface EnqueueJobOptions {
 export const QUEUE_NAMES = {
   REPORT_FINALIZED_PDF: 'report-finalized-pdf',
   SEND_NOTIFICATION: 'send-notification',
+  GENERATE_SUBSCRIPTION_INVOICE_PDF: 'generate-subscription-invoice-pdf',
 } as const;
 
 @Injectable()

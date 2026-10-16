@@ -11,6 +11,10 @@ export interface IPaymentRepository {
   save(payment: PlatformPayment): Promise<PlatformPayment>;
   create(data: Partial<PlatformPayment>): PlatformPayment;
   createInvoice(data: Partial<SubscriptionInvoice>): Promise<SubscriptionInvoice>;
+  findInvoiceById(id: string): Promise<SubscriptionInvoice | null>;
+  findInvoicesByLabId(labId: string): Promise<SubscriptionInvoice[]>;
+  findInvoicesMissingPdf(olderThan: Date, newerThan: Date): Promise<SubscriptionInvoice[]>;
+  saveInvoice(invoice: SubscriptionInvoice): Promise<SubscriptionInvoice>;
 }
 
 export const PAYMENT_REPOSITORY_TOKEN = Symbol('IPaymentRepository');

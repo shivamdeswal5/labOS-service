@@ -7,6 +7,7 @@ import {
 import { RazorpayGatewayAdapter } from '../../infrastructure/adapters/razorpay.adapter';
 import { HandleRazorpayWebhookHandler } from '../handle-razorpay-webhook/handle-razorpay-webhook.handler';
 import { PaymentStatusEnum } from '../../domain/enums/platform-billing.enums';
+import { PgBossService, QUEUE_NAMES } from 'src/modules/shared/infrastructure/queue/pg-boss.service';
 
 @Injectable()
 export class ReconcileStalePaymentsHandler {
@@ -17,6 +18,7 @@ export class ReconcileStalePaymentsHandler {
     private readonly paymentRepo: IPaymentRepository,
     private readonly razorpayAdapter: RazorpayGatewayAdapter,
     private readonly webhookHandler: HandleRazorpayWebhookHandler,
+    private readonly queueService: PgBossService,
   ) {}
 
   async execute(_command?: ReconcileStalePaymentsCommand): Promise<{ reconciledCount: number }> {
@@ -60,6 +62,35 @@ export class ReconcileStalePaymentsHandler {
           `Safety-Net Cron error checking payment ${payment.providerOrderId}: ${err.message}`,
         );
       }
+    }
+
+    // Recover missing invoice PDFs (failed post-commit jobs)
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const invoicesMissingPdf = await this.paymentRepo.findInvoicesMissingPdf(
+        fiveMinutesAgo,
+        twentyFourHoursAgo,
+      );
+
+      for (const inv of invoicesMissingPdf) {
+        try {
+          await this.queueService.sendJob(QUEUE_NAMES.GENERATE_SUBSCRIPTION_INVOICE_PDF, {
+            invoiceId: inv.id,
+            labId: inv.labId,
+          });
+          this.logger.log(
+            `Safety-Net Cron: Recovered missing invoice PDF job for invoice ${inv.invoiceNumber}`,
+          );
+        } catch (err: any) {
+          this.logger.warn(
+            `Safety-Net Cron error recovering invoice PDF for ${inv.invoiceNumber}: ${err.message}`,
+          );
+        }
+      }
+    } catch (invErr: any) {
+      this.logger.warn(
+        `Safety-Net Cron error querying invoices missing PDF: ${invErr.message}`,
+      );
     }
 
     return { reconciledCount };

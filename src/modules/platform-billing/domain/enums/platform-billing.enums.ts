@@ -38,3 +38,15 @@ export enum WebhookEventStatusEnum {
   PROCESSED = 'PROCESSED',
   FAILED = 'FAILED',
 }
+
+export enum CurrencyEnum {
+  INR = 'INR',
+  USD = 'USD',
+  EUR = 'EUR',
+}
+
+export enum PaymentFulfillmentStatusEnum {
+  FULFILLED = 'FULFILLED',
+  DUPLICATE_UNFULFILLED = 'DUPLICATE_UNFULFILLED',
+  REFUND_PENDING = 'REFUND_PENDING',
+}

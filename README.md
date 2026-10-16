@@ -111,6 +111,7 @@ labOS-service/
 - [Product Requirements Document (PRD)](docs/product/prd.md)
 - [System Architecture](docs/architecture/system-design.md)
 - [Data Model & Schema](docs/architecture/data-model.md)
+- [Entity Relationship Diagram (ERD)](docs/architecture/erd.md) ([dbdiagram.io Live](https://dbdiagram.io/d/PathIQ-6ad1b1b3064322c8696969c9) · [Eraser.io Live](https://app.eraser.io/workspace/hJc9cXMMs4DR3jCNpgR6?origin=share))
 - [Coding Standards & Conventions](docs/conventions/coding-standards.md)
 - [Master Backend Review Guide](docs/conventions/backend-review.md)
 - [Master Context & Decisions Log](CONTEXT.md)

@@ -32,6 +32,24 @@ export class RazorpayGatewayAdapter implements IPaymentGatewayPort {
   }
 
   async createOrder(input: CreateGatewayOrderInput): Promise<GatewayOrderResult> {
+    const isPlaceholder =
+      !this.keySecret ||
+      this.keySecret === 'test_secret_placeholder' ||
+      this.keyId === 'rzp_test_placeholder';
+
+    if (isPlaceholder) {
+      this.logger.warn(
+        'RAZORPAY_KEY_ID is not configured with live credentials. Generating sandbox simulation order.',
+      );
+      return {
+        providerOrderId: `order_sim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        provider: this.provider,
+        amountInPaise: Number(input.amountInPaise),
+        currency: input.currency || 'INR',
+        keyId: this.keyId,
+      };
+    }
+
     try {
       const order = await this.razorpay.orders.create({
         amount: input.amountInPaise,
@@ -52,8 +70,9 @@ export class RazorpayGatewayAdapter implements IPaymentGatewayPort {
         keyId: this.keyId,
       };
     } catch (error: any) {
-      this.logger.error(`Razorpay order creation failed: ${error.message}`, error.stack);
-      throw error;
+      const msg = error?.error?.description || error?.message || 'Razorpay order creation failed';
+      this.logger.error(`Razorpay order creation failed: ${msg}`, error?.stack);
+      throw new Error(msg);
     }
   }
 

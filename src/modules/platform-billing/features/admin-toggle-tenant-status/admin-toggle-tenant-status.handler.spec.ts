@@ -7,12 +7,18 @@ import { SubscriptionStatusEnum } from '../../domain/enums/platform-billing.enum
 describe('AdminToggleTenantStatusHandler', () => {
   let handler: AdminToggleTenantStatusHandler;
   let mockSubscriptionRepo: any;
+  let mockPlanRepo: any;
   let mockEventsGateway: any;
 
   beforeEach(() => {
     mockSubscriptionRepo = {
       findByLabId: vi.fn(),
       save: vi.fn((data) => Promise.resolve(data)),
+      create: vi.fn((data) => data),
+    };
+
+    mockPlanRepo = {
+      findBySlug: vi.fn().mockResolvedValue(null),
     };
 
     mockEventsGateway = {
@@ -21,6 +27,7 @@ describe('AdminToggleTenantStatusHandler', () => {
 
     handler = new AdminToggleTenantStatusHandler(
       mockSubscriptionRepo,
+      mockPlanRepo,
       mockEventsGateway,
     );
   });

@@ -14,7 +14,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async findByLabId(labId: string): Promise<TenantSubscription | null> {
     return this.repo.findOne({
       where: { labId },
-      relations: { plan: true },
+      relations: { plan: true, scheduledPlan: true },
     });
   }
 
@@ -32,7 +32,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   async findAll(): Promise<TenantSubscription[]> {
     return this.repo.find({
-      relations: { plan: true },
+      relations: { plan: true, scheduledPlan: true },
       order: { createdAt: 'DESC' },
     });
   }

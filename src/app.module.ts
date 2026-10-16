@@ -23,6 +23,7 @@ import { PlatformBillingModule } from './modules/platform-billing/platform-billi
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
 
     EventEmitterModule.forRoot(),

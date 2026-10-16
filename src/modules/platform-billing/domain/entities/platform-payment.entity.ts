@@ -1,7 +1,11 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseDomainEntity } from 'src/modules/shared/domain/base.entity';
 import { TenantSubscription } from './tenant-subscription.entity';
-import { PaymentStatusEnum, PaymentProviderEnum } from '../enums/platform-billing.enums';
+import {
+  PaymentStatusEnum,
+  PaymentProviderEnum,
+  PaymentFulfillmentStatusEnum,
+} from '../enums/platform-billing.enums';
 
 @Entity('platform_payments')
 export class PlatformPayment extends BaseDomainEntity {
@@ -45,6 +49,14 @@ export class PlatformPayment extends BaseDomainEntity {
 
   @Column({ type: 'varchar', length: 100, unique: true, nullable: true, name: 'idempotency_key' })
   idempotencyKey: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 30,
+    nullable: true,
+    name: 'fulfillment_status',
+  })
+  fulfillmentStatus: PaymentFulfillmentStatusEnum | null;
 
   @Column({ type: 'text', nullable: true, name: 'failure_reason' })
   failureReason: string | null;

@@ -75,12 +75,40 @@ export class SubscriptionLifecycleCron implements OnModuleInit, OnModuleDestroy 
         );
       }
 
-      // 2. Active expired -> Transition to 72h Grace Period
+      // 2. Active expired -> Handle scheduled transition OR transition to 72h Grace Period
       else if (
         sub.status === SubscriptionStatusEnum.ACTIVE &&
         sub.currentPeriodEnd &&
         new Date(sub.currentPeriodEnd).getTime() <= now.getTime()
       ) {
+        if (sub.scheduledPlanId) {
+          const previousPlanName = sub.plan?.name || 'Previous Plan';
+          sub.planId = sub.scheduledPlanId;
+          if (sub.scheduledBillingCycle) {
+            sub.billingCycle = sub.scheduledBillingCycle;
+          }
+          sub.scheduledPlanId = null;
+          sub.scheduledBillingCycle = null;
+          sub.scheduledAt = null;
+
+          sub.status = SubscriptionStatusEnum.GRACE_PERIOD;
+          sub.gracePeriodEnd = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+          await this.subscriptionRepo.save(sub);
+          transitionedCount++;
+
+          this.broadcastEvent(sub.labId, RealtimeChannelEnum.SUBSCRIPTION_UPDATED, {
+            labId: sub.labId,
+            status: sub.status,
+            planId: sub.planId,
+            message: `Scheduled transition from ${previousPlanName} executed. Entered grace period for renewal.`,
+          });
+
+          this.logger.log(
+            `[Scheduled Transition Executed] Lab: ${sub.labId} transitioned to scheduled plan ${sub.planId}`,
+          );
+          continue;
+        }
+
         sub.status = SubscriptionStatusEnum.GRACE_PERIOD;
         sub.gracePeriodEnd = new Date(now.getTime() + 72 * 60 * 60 * 1000);
         await this.subscriptionRepo.save(sub);

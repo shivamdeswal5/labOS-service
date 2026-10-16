@@ -55,4 +55,25 @@ export class TenantSubscription extends BaseDomainEntity {
 
   @Column({ type: 'timestamptz', nullable: true, name: 'canceled_at' })
   canceledAt: Date | null;
+
+  @Column({ type: 'uuid', nullable: true, name: 'scheduled_plan_id' })
+  scheduledPlanId: string | null;
+
+  @ManyToOne(() => PlatformPlan, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'scheduled_plan_id' })
+  scheduledPlan: PlatformPlan | null;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    name: 'scheduled_billing_cycle',
+  })
+  scheduledBillingCycle: BillingCycleEnum | null;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'scheduled_at' })
+  scheduledAt: Date | null;
+
+  @Column({ type: 'varchar', length: 15, nullable: true, name: 'customer_gstin' })
+  customerGstin: string | null;
 }

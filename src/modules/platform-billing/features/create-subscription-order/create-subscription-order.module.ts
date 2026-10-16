@@ -5,8 +5,14 @@ import { RazorpayGatewayAdapter } from '../../infrastructure/adapters/razorpay.a
 import { CreateSubscriptionOrderController } from './create-subscription-order.controller';
 import { CreateSubscriptionOrderHandler } from './create-subscription-order.handler';
 
+import { HandleRazorpayWebhookModule } from '../handle-razorpay-webhook/handle-razorpay-webhook.module';
+
 @Module({
-  imports: [PlatformBillingDatabaseModule, ConfigModule],
+  imports: [
+    PlatformBillingDatabaseModule,
+    ConfigModule,
+    HandleRazorpayWebhookModule,
+  ],
   controllers: [CreateSubscriptionOrderController],
   providers: [CreateSubscriptionOrderHandler, RazorpayGatewayAdapter],
   exports: [CreateSubscriptionOrderHandler],

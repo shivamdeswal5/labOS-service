@@ -73,4 +73,34 @@ export class PaymentRepository implements IPaymentRepository {
     const inv = this.invoiceRepo.create(data);
     return this.invoiceRepo.save(inv);
   }
+
+  async findInvoiceById(id: string): Promise<SubscriptionInvoice | null> {
+    return this.invoiceRepo.findOne({
+      where: { id },
+      relations: { payment: true },
+    });
+  }
+
+  async findInvoicesByLabId(labId: string): Promise<SubscriptionInvoice[]> {
+    return this.invoiceRepo.find({
+      where: { labId },
+      relations: { payment: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findInvoicesMissingPdf(olderThan: Date, newerThan: Date): Promise<SubscriptionInvoice[]> {
+    return this.invoiceRepo
+      .createQueryBuilder('inv')
+      .where('inv.pdf_url IS NULL')
+      .andWhere('inv.created_at < :olderThan', { olderThan })
+      .andWhere('inv.created_at > :newerThan', { newerThan })
+      .orderBy('inv.created_at', 'ASC')
+      .take(25)
+      .getMany();
+  }
+
+  async saveInvoice(invoice: SubscriptionInvoice): Promise<SubscriptionInvoice> {
+    return this.invoiceRepo.save(invoice);
+  }
 }
