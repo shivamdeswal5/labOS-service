@@ -8,6 +8,11 @@ const migrationsPattern = moduleFilter
   ? `dist/modules/${moduleFilter}/infrastructure/database/migrations/*.js`
   : 'dist/modules/**/infrastructure/database/migrations/*.js';
 
+const isProductionOrCloud =
+  process.env.NODE_ENV === 'production' ||
+  process.env.DATABASE_SSL === 'true' ||
+  process.env.DATABASE_HOST?.includes('supabase');
+
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DATABASE_HOST || 'localhost',
@@ -18,7 +23,7 @@ export const dataSourceOptions: DataSourceOptions = {
   entities: ['dist/modules/**/domain/**/*.entity.js'],
   migrations: [migrationsPattern],
   synchronize: false,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: isProductionOrCloud ? { rejectUnauthorized: false } : false,
 };
 
 export const AppDataSource = new DataSource(dataSourceOptions);
