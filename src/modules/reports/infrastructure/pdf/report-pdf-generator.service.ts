@@ -427,10 +427,10 @@ export class ReportPdfGeneratorService {
           });
 
         doc
-          .font('Helvetica-Oblique')
+          .font('Helvetica')
           .fontSize(5.5)
           .fillColor(textMuted)
-          .text(`Token: ${report.shareToken.slice(0, 16)}...`, 105, footerY + 42);
+          .text(`Ref: ${report.reportNumber || 'Verified'}`, 105, footerY + 38);
 
         // Pathologist Sign-off (Right-aligned)
         const signX = 360;

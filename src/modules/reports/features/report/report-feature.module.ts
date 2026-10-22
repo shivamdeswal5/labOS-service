@@ -10,6 +10,8 @@ import { DeleteReportModule } from './delete-report/delete-report.module';
 import { GetSharedReportModule } from './get-shared-report/get-shared-report.module';
 import { GetReportPdfModule } from './get-report-pdf/get-report-pdf.module';
 import { GetSharedReportPdfModule } from './get-shared-report-pdf/get-shared-report-pdf.module';
+import { GenerateClinicalRemarksModule } from './generate-clinical-remarks/generate-clinical-remarks.module';
+import { GetPatientSmartSummaryModule } from './get-patient-smart-summary/get-patient-smart-summary.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { GetSharedReportPdfModule } from './get-shared-report-pdf/get-shared-rep
     GetSharedReportModule,
     GetReportPdfModule,
     GetSharedReportPdfModule,
+    GenerateClinicalRemarksModule,
+    GetPatientSmartSummaryModule,
   ],
   exports: [
     CreateReportModule,
@@ -37,6 +41,8 @@ import { GetSharedReportPdfModule } from './get-shared-report-pdf/get-shared-rep
     GetSharedReportModule,
     GetReportPdfModule,
     GetSharedReportPdfModule,
+    GenerateClinicalRemarksModule,
+    GetPatientSmartSummaryModule,
   ],
 })
 export class ReportFeatureModule {}
